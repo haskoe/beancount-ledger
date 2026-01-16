@@ -8,8 +8,8 @@ from .context import LedgerContext
 
 def handle_opdater(ctx):
     kontoplan_accounts = []
-    document = "bilag/bilag.jpg"
-   
+    document = "bilag/power_649900.pdf"
+
     for period in ctx.periods:
         # process each row in bank_csv
         errors = []

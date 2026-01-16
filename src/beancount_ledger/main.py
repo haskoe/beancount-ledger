@@ -1,4 +1,5 @@
 import argparse
+import os
 from .opdater import handle_opdater
 from .afstem import handle_afstem
 from .godkend import handle_godkend
@@ -11,7 +12,9 @@ def main():
     # Parent parser for shared arguments
     parent_parser = argparse.ArgumentParser(add_help=False)
     parent_parser.add_argument(
-        "--firma", default="aps34720908", help="Navn på firmaet (default: 'aps34720908')"
+        "--firma",
+        default="",
+        help="Navn på firmaet (default: 'aps34720908')",
     )
     # parent_parser.add_argument(
     #     "--periode", default="", help="Regnskabsperiode/år (default: '2021')"
@@ -49,6 +52,21 @@ def main():
     )
 
     args = parser.parse_args()
+    if not os.path.exists(args.firma):
+        candidates = [
+            f
+            for f in os.listdir()
+            if os.path.isdir(f)
+            and not f.startswith(".")
+            and (not args.firma or f.startswith(args.firma))
+        ]
+        if len(candidates) == 1:
+            args.firma = candidates[0]
+        else:
+            parser.error(f"--firma {args.firma} not found, candidates: {candidates}")
+
+    if not args.enddate:
+        parser.error("--enddate is required")
 
     ctx = LedgerContext(company_name=args.firma, enddate=args.enddate)
 

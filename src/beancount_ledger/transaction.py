@@ -109,7 +109,7 @@ class Transaction:
                 amount=amount_wo_vat * (1 + const.VAT_PCT),
                 account1=f"Income:Salg:{account_name}",
                 account2=f"Assets:Debitorer:{account_name}",
-                document="bilag/bilag.jpg",
+                document="bilag/power_649900.pdf",
                 template_name=const.MED_MOMS,
             )
             transaction.set_vat("Liabilities:Moms:SalgMoms", const.VAT_PCT, 0)
