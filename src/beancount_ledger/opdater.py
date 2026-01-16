@@ -8,6 +8,8 @@ from .context import LedgerContext
 
 def handle_opdater(ctx):
     kontoplan_accounts = []
+    document = "bilag/bilag.jpg"
+   
     for period in ctx.periods:
         # process each row in bank_csv
         errors = []
@@ -79,6 +81,7 @@ def handle_opdater(ctx):
                     amount=bank_transaction.amount,
                     account1=full_account_name,
                     account2=f"Liabilities:Kreditorer:{account_name}",
+                    document=document,
                     template_name=med_moms and const.MED_MOMS or const.UDEN_MOMS,
                 )
                 if med_moms:
@@ -97,6 +100,7 @@ def handle_opdater(ctx):
                 amount=bank_transaction.amount,
                 account1=account1,
                 account2=f"Assets:Bank:BankErhverv",
+                document=document,
                 template_name=const.UDEN_MOMS,
             )
             transactions.append(transaction)
@@ -139,6 +143,7 @@ def handle_opdater(ctx):
                         account1=acc1,
                         account2=acc2,
                         template_name=const.UDEN_MOMS,
+                        document=document,
                     )
                 )
         ctx.render_transactions(period, "udbytte", udbytte_output)
@@ -173,6 +178,7 @@ def handle_opdater(ctx):
                         text="Løn",
                         extra_text=f"Løn {account}. Periode {period_txt}",
                         template_name=const.UDEN_MOMS,
+                        document=document,
                     )
                 )
         ctx.render_transactions(period, "loen", loen_output)

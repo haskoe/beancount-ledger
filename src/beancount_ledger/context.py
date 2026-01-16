@@ -3,7 +3,7 @@ import re
 from os import path
 from collections import defaultdict
 from datetime import datetime, date
-from jinja2 import Environment, FileSystemLoader
+from jinja2 import Environment, DictLoader
 from dataclasses import dataclass
 from .driver.connector import BeancountConnector
 from . import constants as const
@@ -43,15 +43,12 @@ class LedgerContext:
 
     @cached_property
     def company_path(self) -> str:
+        print(self.company_name)
         return path.join(self.root_path, self.company_name)
 
     @cached_property
     def company_generated_path(self) -> str:
         return path.join(self.root_path, self.company_name, const.GENERATED_DIR)
-
-    @cached_property
-    def templates_path(self) -> str:
-        return path.join(self.root_path, const.TEMPLATE_DIR)
 
     def company_period_path(self, period: str, filename: str) -> str:
         return path.join(self.company_path, period, filename)
@@ -73,7 +70,7 @@ class LedgerContext:
         for t in transactions:
             if t.date_posted > self.enddate:
                 continue
-            template = self.templates[t.template_name]
+            template = self.get_template(t.template_name)
             output.append(template.render(t.as_dict))
         self.write_file_in_generated_dir(
             f"{prefix}{period}.beancount", "\n\n".join(output)
@@ -95,14 +92,11 @@ class LedgerContext:
         return BeancountConnector(path.join(self.company_path, "regnskab.beancount"))
 
     @cached_property
-    def templates(self):
-        jinja_env = Environment(loader=FileSystemLoader(self.templates_path))
-        return dict(
-            [
-                (fn.split(".")[0], jinja_env.get_template(fn))
-                for fn in os.listdir(self.templates_path)
-            ]
-        )
+    def _jinja_env(self):
+        return Environment(loader=DictLoader(templates_dict))
+    
+    def get_template(self, template_name: str):
+        return self._jinja_env.get_template(template_name)
 
     @cached_property
     def all_accounts(self):
@@ -182,16 +176,59 @@ class LedgerContext:
 
     @cached_property
     def transaction_types(self):
-        return dict(
-            [
-                (k[const.ACCOUNT_GROUP], k)
-                for k in util.load_csv(
-                    const.TRANSACTION_TYPE_CSV,
-                    const.CSV_SPECS[const.TRANSACTION_TYPE_CSV],
-                )
-            ]
-        )
+        return {
+            "Liabilities": {
+                const.ACCOUNT_GROUP: "Liabilities",
+                const.ANTAL_POSTERINGER: 1,
+                const.MED_MOMS: 0
+            },
+            "Expenses": {
+                const.ACCOUNT_GROUP: "Expenses",
+                const.ANTAL_POSTERINGER: 1,
+                const.MED_MOMS: 0
+            },
+            "Expenses:Loen": {
+                const.ACCOUNT_GROUP: "Expenses:Loen",
+                const.ANTAL_POSTERINGER: 1,
+                const.MED_MOMS: 0
+            },
+            "Expenses:MedMoms": {
+                const.ACCOUNT_GROUP: "Expenses:MedMoms",
+                const.ANTAL_POSTERINGER: 2,
+                const.MED_MOMS: 1
+            },
+            "Expenses:UdenMoms": {
+                const.ACCOUNT_GROUP: "Expenses:UdenMoms",
+                const.ANTAL_POSTERINGER: 2,
+                const.MED_MOMS: 0
+            },
+            "Assets": {
+                const.ACCOUNT_GROUP: "Assets",
+                const.ANTAL_POSTERINGER: 1,
+                const.MED_MOMS: 0
+            },
+            "Income": {
+                const.ACCOUNT_GROUP: "Income",
+                const.ANTAL_POSTERINGER: 1,
+                const.MED_MOMS: 0
+            },
+        }
 
     def find_price(self, account_name, price_type, dt):
         matches_reversed = reversed(self.prices[account_name][price_type])
         return next((price for from_date, price in matches_reversed if from_date <= dt))
+
+templates_dict = {
+    "med_moms": """{{ date_posted }} * "{{ text }}" "{{ extra_text}}"
+  {{ account1.ljust(50) }} {{ amount_wo_vat_negated.rjust(20) }} {{ currency }}
+  {{ account2.ljust(50) }} {{ amount.rjust(20) }} {{ currency }}
+  {{ account3.ljust(50) }} {{ vat_negated.rjust(20) }} {{ currency }}""",
+    "uden_moms": """{{ date_posted }} * "{{ text }}" "{{ extra_text}}"
+  {{ account1.ljust(50) }} {{ amount_negated.rjust(20) }} {{ currency }}
+  {{ account2.ljust(50) }} {{ amount.rjust(20) }} {{ currency }}""",
+  "moms_luk": """{{ date_posted }} * "Momsafregning" "Lukning af moms {{ period }}"
+  {{ koebmoms_account.ljust(50) }} {{ koebmoms.rjust(20) }} {{ currency }}
+  {{ salgmoms_account.ljust(50) }} {{ salgmoms.rjust(20) }} {{ currency }}
+  {{ skyldigmoms_account.ljust(50) }} {{ skyldigmoms.rjust(20) }} {{ currency }}
+  {{ afrunding_account.ljust(50) }} {{ afrunding.rjust(20) }} {{ currency }}"""
+}

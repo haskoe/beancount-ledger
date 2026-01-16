@@ -4,13 +4,14 @@ from .afstem import handle_afstem
 from .godkend import handle_godkend
 from .moms_luk import handle_moms_luk
 from .status import handle_status
+from .context import LedgerContext
 
 
 def main():
     # Parent parser for shared arguments
     parent_parser = argparse.ArgumentParser(add_help=False)
     parent_parser.add_argument(
-        "--firma", default="firma", help="Navn på firmaet (default: 'firma')"
+        "--firma", default="aps34720908", help="Navn på firmaet (default: 'aps34720908')"
     )
     # parent_parser.add_argument(
     #     "--periode", default="", help="Regnskabsperiode/år (default: '2021')"
@@ -48,8 +49,6 @@ def main():
     )
 
     args = parser.parse_args()
-
-    from context import LedgerContext
 
     ctx = LedgerContext(company_name=args.firma, enddate=args.enddate)
 
