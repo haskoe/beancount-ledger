@@ -94,7 +94,7 @@ class LedgerContext:
     @cached_property
     def _jinja_env(self):
         return Environment(loader=DictLoader(templates_dict))
-    
+
     def get_template(self, template_name: str):
         return self._jinja_env.get_template(template_name)
 
@@ -180,37 +180,37 @@ class LedgerContext:
             "Liabilities": {
                 const.ACCOUNT_GROUP: "Liabilities",
                 const.ANTAL_POSTERINGER: 1,
-                const.MED_MOMS: 0
+                const.MED_MOMS: 0,
             },
             "Expenses": {
                 const.ACCOUNT_GROUP: "Expenses",
                 const.ANTAL_POSTERINGER: 1,
-                const.MED_MOMS: 0
+                const.MED_MOMS: 0,
             },
             "Expenses:Loen": {
                 const.ACCOUNT_GROUP: "Expenses:Loen",
                 const.ANTAL_POSTERINGER: 1,
-                const.MED_MOMS: 0
+                const.MED_MOMS: 0,
             },
             "Expenses:MedMoms": {
                 const.ACCOUNT_GROUP: "Expenses:MedMoms",
                 const.ANTAL_POSTERINGER: 2,
-                const.MED_MOMS: 1
+                const.MED_MOMS: 1,
             },
             "Expenses:UdenMoms": {
                 const.ACCOUNT_GROUP: "Expenses:UdenMoms",
                 const.ANTAL_POSTERINGER: 2,
-                const.MED_MOMS: 0
+                const.MED_MOMS: 0,
             },
             "Assets": {
                 const.ACCOUNT_GROUP: "Assets",
                 const.ANTAL_POSTERINGER: 1,
-                const.MED_MOMS: 0
+                const.MED_MOMS: 0,
             },
             "Income": {
                 const.ACCOUNT_GROUP: "Income",
                 const.ANTAL_POSTERINGER: 1,
-                const.MED_MOMS: 0
+                const.MED_MOMS: 0,
             },
         }
 
@@ -218,17 +218,20 @@ class LedgerContext:
         matches_reversed = reversed(self.prices[account_name][price_type])
         return next((price for from_date, price in matches_reversed if from_date <= dt))
 
+
 templates_dict = {
     "med_moms": """{{ date_posted }} * "{{ text }}" "{{ extra_text}}"
+  {{ document }}
   {{ account1.ljust(50) }} {{ amount_wo_vat_negated.rjust(20) }} {{ currency }}
   {{ account2.ljust(50) }} {{ amount.rjust(20) }} {{ currency }}
   {{ account3.ljust(50) }} {{ vat_negated.rjust(20) }} {{ currency }}""",
     "uden_moms": """{{ date_posted }} * "{{ text }}" "{{ extra_text}}"
+  {{ document }}
   {{ account1.ljust(50) }} {{ amount_negated.rjust(20) }} {{ currency }}
   {{ account2.ljust(50) }} {{ amount.rjust(20) }} {{ currency }}""",
-  "moms_luk": """{{ date_posted }} * "Momsafregning" "Lukning af moms {{ period }}"
+    "moms_luk": """{{ date_posted }} * "Momsafregning" "Lukning af moms {{ period }}"
   {{ koebmoms_account.ljust(50) }} {{ koebmoms.rjust(20) }} {{ currency }}
   {{ salgmoms_account.ljust(50) }} {{ salgmoms.rjust(20) }} {{ currency }}
   {{ skyldigmoms_account.ljust(50) }} {{ skyldigmoms.rjust(20) }} {{ currency }}
-  {{ afrunding_account.ljust(50) }} {{ afrunding.rjust(20) }} {{ currency }}"""
+  {{ afrunding_account.ljust(50) }} {{ afrunding.rjust(20) }} {{ currency }}""",
 }

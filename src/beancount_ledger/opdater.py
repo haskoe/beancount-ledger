@@ -8,7 +8,7 @@ from .context import LedgerContext
 
 def handle_opdater(ctx):
     kontoplan_accounts = []
-    document = "bilag/power_649900.pdf"
+    document = "20190702_121057_cd10fd68f0c094fd149ecc32e21088d9.jpg"
 
     for period in ctx.periods:
         # process each row in bank_csv

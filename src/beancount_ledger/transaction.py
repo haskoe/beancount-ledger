@@ -69,6 +69,9 @@ class Transaction:
             const.DATE_POSTED: util.format_date(self.date_posted),
             const.AMOUNT_WO_VAT_NEGATED: util.format_money(-sign * self.amount_wo_vat),
             const.VAT_NEGATED: util.format_money(-sign * self.vat),
+            "document": self.document
+            and f'external_link: "http://localhost:8000/{self.document}"'
+            or None,
             # "date_posted": self.date_posted,
             # todo
             # "date_posted": self.date_posted,
@@ -109,7 +112,7 @@ class Transaction:
                 amount=amount_wo_vat * (1 + const.VAT_PCT),
                 account1=f"Income:Salg:{account_name}",
                 account2=f"Assets:Debitorer:{account_name}",
-                document="bilag/power_649900.pdf",
+                document="20190702_121057_cd10fd68f0c094fd149ecc32e21088d9.jpg",
                 template_name=const.MED_MOMS,
             )
             transaction.set_vat("Liabilities:Moms:SalgMoms", const.VAT_PCT, 0)
