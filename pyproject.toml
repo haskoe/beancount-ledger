@@ -1,0 +1,14 @@
+[project]
+name = "beancount-ledger"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "beancount>=3.2.0",
+    "beangulp>=0.2.0",
+    "fava>=1.30.10",
+    "jinja2>=3.1.6",
+    "pandas>=2.3.3",
+    "weasyprint>=67.0",
+]
