@@ -44,6 +44,26 @@ def get_text_from_ai(base64_image):
         return f"FEJL under AI-behandling: {e}"
 
 
+def extract_fields(ocr_text):
+    prompt = f"""Her er tekst fra en faktura:
+    {ocr_text}
+    
+    Returnér KUN følgende som JSON:
+    - firmanavn
+    - total_pris
+    - faktureringsdato
+    """
+
+    # Send til din anden server på port 8081
+    payload = {
+        "messages": [{"role": "user", "content": prompt}],
+        "temperature": 0.0,  # Vi vil have fakta, ikke kreativitet
+    }
+
+    response = requests.post("http://localhost:8081/v1/chat/completions", json=payload)
+    return response.json()["choices"][0]["message"]["content"]
+
+
 def handle_image_test(ctx):
     files = [
         f
@@ -79,9 +99,10 @@ def handle_image_test(ctx):
             img = Image.open(file_path)
             extracted_text = get_text_from_ai(process_image(img))
 
+        result = extract_fields(extracted_text)
         # Gem resultatet
         with open(output_path, "w", encoding="utf-8") as f:
-            f.write(extracted_text)
+            f.write(result)
         print(f"Færdig! Gemt i {output_path}")
 
 
