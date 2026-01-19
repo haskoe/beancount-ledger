@@ -1,4 +1,5 @@
 import os
+import json
 import base64
 import requests
 from pdf2image import convert_from_path
@@ -8,40 +9,50 @@ from pathlib import Path
 SERVER_URL = "http://localhost:8080/v1/chat/completions"
 
 
-def process_image(image):
-    """Konverterer et PIL-billede til base64-streng"""
+def process_image_to_b64(pil_img):
     buffered = BytesIO()
-    image.save(buffered, format="JPEG")
+    pil_img.save(buffered, format="JPEG")
     return base64.b64encode(buffered.getvalue()).decode("utf-8")
 
 
-def get_text_from_ai(base64_image):
-    """Sender billede til llama-server og returnerer teksten"""
+def analyze_and_extract(pil_img):
+    """Sender billede til Qwen3-VL for både rotationstjek og OCR"""
+    b64_img = process_image_to_b64(pil_img)
+
+    prompt = """Analyze this image and perform two tasks:
+1. Determine the rotation angle (0, 90, 180, or 270) needed to make the text upright for reading.
+2. Extract all text from the image accurately.
+
+Return ONLY a JSON object with these keys:
+- "rotation_needed": (int)
+- "extracted_text": (string)"""
+
     payload = {
         "messages": [
             {
                 "role": "user",
                 "content": [
-                    {
-                        "type": "text",
-                        "text": "Extract all text from this image accurately. Use markdown format.",
-                    },
+                    {"type": "text", "text": prompt},
                     {
                         "type": "image_url",
-                        "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"},
+                        "image_url": {"url": f"data:image/jpeg;base64,{b64_img}"},
                     },
                 ],
             }
         ],
-        "temperature": 0.2,  # Lav temperatur = mere præcis OCR
-        "stream": False,
+        "temperature": 0,
+        "response_format": {"type": "json_object"},  # Hvis din server understøtter det
     }
 
     try:
         response = requests.post(SERVER_URL, json=payload, timeout=120)
-        return response.json()["choices"][0]["message"]["content"]
+        # Rens output for evt. markdown (```json ... ```)
+        raw_content = response.json()["choices"][0]["message"]["content"]
+        clean_content = raw_content.replace("```json", "").replace("```", "").strip()
+        return json.loads(clean_content)
     except Exception as e:
-        return f"FEJL under AI-behandling: {e}"
+        print(f"Fejl ved API-kald: {e}")
+        return None
 
 
 def extract_fields(ocr_text):
@@ -84,26 +95,31 @@ def handle_image_test(ctx):
 
         # Håndter PDF
         if filename.lower().endswith(".pdf"):
-            pages = convert_from_path(file_path, 300)
-            for i, page in enumerate(pages):
-                print(f"  - Side {i + 1} af {len(pages)}")
-                b64_img = process_image(page)
-                extracted_text += f"\n--- SIDE {i + 1} ---\n" + get_text_from_ai(
-                    b64_img
-                )
+            return
+            # pages = convert_from_path(file_path, 300)
+            # for i, page in enumerate(pages):
+            #     print(f"  - Side {i + 1} af {len(pages)}")
+            #     b64_img = process_image(page)
+            #     extracted_text += f"\n--- SIDE {i + 1} ---\n" + get_text_from_ai(
+            #         b64_img
+            #     )
 
         # Håndter Billeder
         else:
             from PIL import Image
 
             img = Image.open(file_path)
-            extracted_text = get_text_from_ai(process_image(img))
-
-        result = extract_fields(extracted_text)
-        # Gem resultatet
-        with open(output_path, "w", encoding="utf-8") as f:
-            f.write(result)
-        print(f"Færdig! Gemt i {output_path}")
+            img_result = analyze_and_extract(img)
+            if img_result:
+                angle = img_result.get("rotation_needed", 0)
+                extracted_text = img_result.get("extracted_text", "")
+                print(angle)
+                print(extracted_text)
+                result = extract_fields(extracted_text)
+                # Gem resultatet
+                with open(output_path, "w", encoding="utf-8") as f:
+                    f.write(result)
+                print(f"Færdig! Gemt i {output_path}")
 
 
 if __name__ == "__main__":
