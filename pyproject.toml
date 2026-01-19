@@ -3,7 +3,7 @@ name = "beancount-ledger"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.12.12"
+requires-python = ">=3.14.2"
 dependencies = [
     "beancount>=3.2.0",
     "beangulp>=0.2.0",
