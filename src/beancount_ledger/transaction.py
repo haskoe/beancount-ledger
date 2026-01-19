@@ -18,6 +18,8 @@ class Transaction:
     template_name: str
 
     def __post_init__(self):
+        self.url = "http://localhost:8000"
+        self.url = None
         if isinstance(self.date_posted, datetime):
             self.date_posted = self.date_posted.date()
         self.amount_abs = abs(self.amount)
@@ -69,9 +71,10 @@ class Transaction:
             const.DATE_POSTED: util.format_date(self.date_posted),
             const.AMOUNT_WO_VAT_NEGATED: util.format_money(-sign * self.amount_wo_vat),
             const.VAT_NEGATED: util.format_money(-sign * self.vat),
-            "document": self.document
-            and f'external_link: "http://localhost:8000/{self.document}"'
-            or None,
+            "document": self.document and f'document: "{self.document}"',
+            "external_link": self.document
+            and self.url
+            and f'external_link: "{self.url}/{self.document}"',
             # "date_posted": self.date_posted,
             # todo
             # "date_posted": self.date_posted,

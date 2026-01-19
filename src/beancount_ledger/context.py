@@ -16,7 +16,7 @@ from decimal import Decimal
 class LedgerContext:
     company_name: str
     enddate: date
-    root_path: str = "."
+    root_path: str = "firma"
 
     def __post_init__(self):
         if isinstance(self.enddate, str):
@@ -27,6 +27,10 @@ class LedgerContext:
 
         if not self.enddate:
             self.enddate = datetime(int(self.period), 12, 31).date()
+
+    @cached_property
+    def indbakke_dir(self) -> str:
+        return path.join(self.company_path, "indbakke")
 
     @cached_property
     def periods(self) -> list[str]:
@@ -43,7 +47,6 @@ class LedgerContext:
 
     @cached_property
     def company_path(self) -> str:
-        print(self.company_name)
         return path.join(self.root_path, self.company_name)
 
     @cached_property
@@ -221,11 +224,14 @@ class LedgerContext:
 
 templates_dict = {
     "med_moms": """{{ date_posted }} * "{{ text }}" "{{ extra_text}}"
+  {{ external_link }}
+  {{ external_link }}
   {{ document }}
   {{ account1.ljust(50) }} {{ amount_wo_vat_negated.rjust(20) }} {{ currency }}
   {{ account2.ljust(50) }} {{ amount.rjust(20) }} {{ currency }}
   {{ account3.ljust(50) }} {{ vat_negated.rjust(20) }} {{ currency }}""",
     "uden_moms": """{{ date_posted }} * "{{ text }}" "{{ extra_text}}"
+  {{ external_link }}
   {{ document }}
   {{ account1.ljust(50) }} {{ amount_negated.rjust(20) }} {{ currency }}
   {{ account2.ljust(50) }} {{ amount.rjust(20) }} {{ currency }}""",

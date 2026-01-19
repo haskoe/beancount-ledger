@@ -6,6 +6,7 @@ from .godkend import handle_godkend
 from .moms_luk import handle_moms_luk
 from .status import handle_status
 from .context import LedgerContext
+from .image_parse_test import handle_image_test
 
 
 def main():
@@ -40,6 +41,11 @@ def main():
         help="Check at saldo på bankkontoer stemmer med beancount transaktioner",
     )
 
+    # Subcommand: image (test)
+    subparsers.add_parser(
+        "image", parents=[parent_parser], help="tester text extraction from image"
+    )
+
     # Subcommand: godkend
     subparsers.add_parser(
         "godkend", parents=[parent_parser], help="Godkend afstemning eller lukning"
@@ -51,12 +57,13 @@ def main():
         "status", parents=[parent_parser], help="Vis status/rapporter"
     )
 
+    firma_root_path = "firma"
     args = parser.parse_args()
     if not os.path.exists(args.firma):
         candidates = [
             f
-            for f in os.listdir()
-            if os.path.isdir(f)
+            for f in os.listdir(firma_root_path)
+            if os.path.isdir(os.path.join(firma_root_path, f))
             and not f.startswith(".")
             and (not args.firma or f.startswith(args.firma))
         ]
@@ -80,6 +87,8 @@ def main():
         handle_status(ctx)
     elif args.command == "opdater":
         handle_opdater(ctx)
+    elif args.command == "image":
+        handle_image_test(ctx)
     else:
         parser.print_help()
 

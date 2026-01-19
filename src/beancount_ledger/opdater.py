@@ -4,6 +4,7 @@ from .bank_transaction import BankTransaction
 from . import constants as const
 from . import util
 from .context import LedgerContext
+import os
 
 
 def handle_opdater(ctx):
@@ -112,6 +113,12 @@ def handle_opdater(ctx):
         ctx.render_period_transactions(period, transactions)
 
         salg_output = Transaction.from_salg_csv(ctx.get_salg_csv(period), ctx)
+        bilag_base_path = os.path.join(
+            "/home/heas/proj/heas0404/aps/repos/ledger/aps", period, "salg"
+        )
+        bilag = sorted(os.listdir(bilag_base_path))
+        # print(bilag)
+
         ctx.render_transactions(period, "salg", salg_output)
 
         udbytte_output = []
