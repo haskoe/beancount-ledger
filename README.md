@@ -16,13 +16,13 @@ Hvis firmaets salgspriser ændres skal dette tilføjes til pris filen.
 
 # Flows
 
-## Afstemning
-
-### Identifikation af nye transaktioner
+## Dannelse af nye transaktioner
 Brugeren opdaterer bankkonto CSV filen (og evt. salg og løn) og kører kommandoen "opdater".
 Systemet gendanner nu samtlige BeanCount transaktioner ud fra:
 - Bank transaktioner i CSV fil: target konto (eksempelvis "Accountant") findes ud fra beskrivelse, posteringstype findes ud fra target kontogruppe og beancount postering dannes ud fra et Jinja template fundet ud fra posteringstype.
 - Salgs transaktioner i CSV fil: Time- oPriser target konto (eksempelvis "Accountant") findes ud fra beskrivelse, posteringstype findes ud fra target kontogruppe og beancount postering dannes ud fra et Jinja template fundet ud fra posteringstype.
+
+### Identifikation af nye transaktioner
 
 finde target konto ud fra b
 hvis der er ny 

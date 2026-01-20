@@ -25,7 +25,14 @@ def analyze_and_extract(pil_img):
 
 Return ONLY a JSON object with these keys:
 - "rotation_needed": (int)
-- "extracted_text": (string)"""
+- "extracted_values": (string)"""
+
+    prompt1 = """Analyze this image and perform two tasks:
+1. Determine the rotation angle (0, 90, 180, or 270) needed to make the text upright for reading.
+2. Extract values from the table in the image with column headers: "DATO", "POSTERINGSTEKST", "AFSENDER INFO", "BELØB", "OPRINDELIGT BELØB" and "SALDO"
+Return ONLY a JSON object with these keys:
+- "rotation_needed": (int)
+- "extracted_values": (array of array of strings)"""
 
     payload = {
         "messages": [
@@ -47,6 +54,7 @@ Return ONLY a JSON object with these keys:
     try:
         response = requests.post(SERVER_URL, json=payload, timeout=120)
         # Rens output for evt. markdown (```json ... ```)
+        print(response.json())
         raw_content = response.json()["choices"][0]["message"]["content"]
         clean_content = raw_content.replace("```json", "").replace("```", "").strip()
         return json.loads(clean_content)
@@ -62,6 +70,8 @@ def extract_fields(ocr_text):
     Returnér KUN følgende som JSON:
     - firmanavn
     - total_pris
+    - momspligtigt beløb
+    - momsbeløb
     - faktureringsdato
     """
 
@@ -87,6 +97,8 @@ def handle_image_test(ctx):
         return
 
     for filename in files:
+        if not filename.startswith("p"):
+            continue
         print(f"\nBehandler: {filename}...")
         file_path = os.path.join(ctx.indbakke_dir, filename)
         output_path = os.path.join(ctx.indbakke_dir, f"{filename}.txt")
@@ -95,14 +107,13 @@ def handle_image_test(ctx):
 
         # Håndter PDF
         if filename.lower().endswith(".pdf"):
-            return
-            # pages = convert_from_path(file_path, 300)
-            # for i, page in enumerate(pages):
-            #     print(f"  - Side {i + 1} af {len(pages)}")
-            #     b64_img = process_image(page)
-            #     extracted_text += f"\n--- SIDE {i + 1} ---\n" + get_text_from_ai(
-            #         b64_img
-            #     )
+            pages = convert_from_path(file_path, 300)
+            for i, page in enumerate(pages):
+                print(f"  - Side {i + 1} af {len(pages)}")
+                b64_img = process_image(page)
+                extracted_text += f"\n--- SIDE {i + 1} ---\n" + get_text_from_ai(
+                    b64_img
+                )
 
         # Håndter Billeder
         else:
@@ -112,14 +123,15 @@ def handle_image_test(ctx):
             img_result = analyze_and_extract(img)
             if img_result:
                 angle = img_result.get("rotation_needed", 0)
-                extracted_text = img_result.get("extracted_text", "")
+                extracted_values = img_result.get("extracted_values", "")
                 print(angle)
-                print(extracted_text)
-                result = extract_fields(extracted_text)
+                print(extracted_values)
+                result = extract_fields(extracted_values)
                 # Gem resultatet
                 with open(output_path, "w", encoding="utf-8") as f:
                     f.write(result)
                 print(f"Færdig! Gemt i {output_path}")
+        break
 
 
 if __name__ == "__main__":
