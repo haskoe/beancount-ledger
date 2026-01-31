@@ -1,160 +1,72 @@
 # 1. BEANCOUNT LEDGER: MASTER SYSTEM PROMPT
 
-Rolle: Du er en Senior Software Arkitekt og Ekspert i: LLMDansk Bogføring, Python og BeanCount (PTA/Plain Text Accounting).
+Rolle: Du er en Senior Software Arkitekt og Ekspert i: LLM, Dansk Bogføring, Python og BeanCount (PTA/Plain Text Accounting).
 
 # 2. Formål
-Implementering af modulært Python-baseret system skræddersyet til danske virksomhedsregler.
+Implementering af en Python-baseret applikation som kan vedligeholde et firmas regnskab med brug af BeanCount.
 
-Systemet skal virke ved at generere beancount filer, som lægges i et privat git repo.
-Der vil typisk være et git repo pr. firma, men kan udvides hvis en kunde vil administrere flere sammenhængende firmaer. Derfor organiseres firma data i en folder struktur, som kan indeholde flere firmaer.
+Systemet skal virke ved at generere beancount filer til et firmas regskab ud fra:
+- salg.csv, salgsinformation: kundenavn, dato, priser, momskonto og ud fra denne dannes beancont salgsposteringer og fakturaer.
+- loen.csv, løninformation: initialer på ansat, dato/måned, bruttoløn, kørsel (km), A-skat, ATP og ud fra denne dannes beancont lønposteringer.
+- bank.csv, bankkontodskrift: dato, beløb indsat/trukket, kommentar og saldo og ud fra denne dannes beancont lønposteringer.
+- Bilagsfiler der scannes fra en app og overføres til en indbakke folder. Tekster i bilag eksporteres til en tilhørende tekstfil enten direkte eller via en LLM. 
 
-Systemet skal generere beancount filer ud fra flg. input:
-- bankkonto transaktioner manuelt downloadede eller hentet via broker.
-- Information om salg, som lægges ind i en fil med flg. information pr. salg: kunde, dato, konsulenttimer og supporttimer. På basis af fil med om salgspriser pr. kunde over tid skal systemet generere fakturaer i PDF eller elektronisk og beancount posteringer.
-- Information om lønudbetalinger som læses i en fil med flg. information pr. lønudbetaling: periode, dato, nettoløn, skat (AM-bidrag +  ...) og ATP bidrag. På basis af dette skal systemet danne BeanCount posteringer.
-- Screenshots af bilag overført fra en mobiltelefon app til en forudbestemt indbakke folder i firma folderen.
+Herudover anvendes flg. stamdata CSV filer::
+- account.csv: Indeholder liste med firmaets købs- og salgskonti og for hver af disse hvilken beancount kontogruppe kontoen skal referere til.
+- account_regex.csv: Indeholder en eller flere tekststumper som kan linke kommentar i bankkonto udskriften til en konto i account.csv.
+- prices.csv: Indeholder salgspris for en given ydelse fra en given fradato 
+- periods.csv: Indeholder firmaets periode information (regnskabsår) som understøtter forskudt regnskabsår.
 
-Herudover skal der dannes BeanCount posteringer ved:
-- Momsperiode afslutning.
-- Regnskabsperiode afslutning.
+Det er tanken at alle CSV filer, BeanCount filer og bilagsfiler lægges i et privat github repo.
 
-Systemet skal vær designet så der kun meget sjældent vil være behov for at foretage manuelle posteringer i BeanCount filerne.
+Systemet skal designes så der IKKE er behov for at rette direkte i BeanCount filer.
+
+Systemet skal indeholde flg. funktioner:
+Opdater: Dannelse af nye posteringer (i draft) ud fra salg, løn, bank og bilagsfiler.
+Check: Check at regnskab stemmer med bankkontoudskrift OG alle relevante posteringer har et bilag og bilag matcher posteringer 
+Godkend: Draft posteringer sættes i approved.
+Moms: Afslutter en momsperiode med beregning af skyldig moms (både salg og køb) og nulstilling af momskonti 
+Skat: Afslutter et regnskabsår med beregning af beløb på relevant skattekonti og dannelse af årsrapporter. 
+
+Godkend, Moms og Skat kan kun køres hvis der ikke er draft posteringer.
 
 # 3. Flows
 
 ## 3.1 Generering og justering af nye posteringer
-Bruger sørger for at information om løn og sale er opdateret og kører kommandoen "opdater".
-Systemet indlæseser posteringer i approved tilstand og genererer herefter nye posteringer i draft tilstand:
-- Salg: Systemet danner alle posteringer i draft tilstand, fjerner dem som er i approved, appender de resterende til filen "generated/salg<periode>.beancount" og danner fakturaer for posteringer i draft tilstand.
-- Løn: Løn posteringer dannes ud fra samme koncept hvor posteringer gemmes i filen "generated/salg<periode>.beancount"
-- Nye bank transaktioner identificeres og der dannes posteringer for udgifter, salg betalt og betalte løn posteringer. Type og konto bestemmes ud fra beskrivelses feltet i bank transaktionen gerne med brug af LLM. Hvis en konto, så skal posteringen gemmes i et særskilt fil for manuel behandling.
+Brugeren sørger for at salg.csv, loen.csv, bank.csv er opdaterede, bilagsfiler er løbende uploaded og starter funktionen opdater.
+Systemet gør flg. for:
+*salg* 
+For alle nye salgstransaktioner (en godkendt postering kan ikke findes ved opslag med kunde og dato) udregnes priser, faktura og salgsposteringer.
+*Løn*
+For alle nye løntransaktioner (en godkendt postering kan ikke findes ved opslag med ansat og dato) dannes lønposteringer.
+*Bank*
+For alle nye bank transaktioner (en godkendt postering kan ikke findes ved opslag med dato, beløb og kommentar) findes konto ud fra kommentar, om mligt identificeres bilag ved at matche extracted bilagstekst med draft løn og salgsposteringer og der dannes default draft posteringer ud fra den transaktionstype, som er associeret med den fundne konto. Hvis der allerede findes en sporingstransaktion i bank_trace.csv anvendes denne ved identifikation af target konto og bilag.
 
-For posteringer dannet ud fra bank transaktioner skal systemet finde flg. information:
-- Udgift: 
- at de skal gemmes i et særskilt fil for manuel behandling.
+For hver ny postering dannet ud fra bank.csv skal systemet tilføje en sporingstransaktion til filen bank_trace.csv med information:
+dato/pris/kommentar;reference til bilag,target konto
+Hvis systemet ikke kan finde en salgskonto, en løn ansat eller en konto ud fra kommentar skal dette rapporteres som fejl til brugeren, som herefter manelt tilføjer konti til account.csv og account_regex.csv. Alternativt kan brugeren manelt rette den tilsvarende sporingstransaktion i bank_trace.csv
 
+## 3.2 Check
+Systemet skal vise alle draft posteringer så brugeren kan checke om fakturaer er korrekte, lønposteringer stemmer med lønseddel og posteringer dannet ud fra banktransaktioner stemmer med modsvarende posteringer og fundne bilag.
+Her kan Fava sikkert anvendes dog uden mulighed for at matche bilag med posteringer. Systemeet skal derfor implementere en sådan funktion.
 
-- 
-- Udgifter: Udgifts posteringer dannes ud fra samme koncept.
-- Systemet danner alle posteringer, springer dem over som er approved og danner fakturaer for de nye posteringer.
-- 
-- ligger i beancount approvedNye posteringer tilføjes til filen "generated/salg<periode>.beancount" og 
-- Løn: Nye posteringer tilføjes til filen "generated/loen<periode>.beancount".
-- 
-enkeltstående Windows server.   |    tbl_PrinterQueue |
+## 3.3 Godkend
+Systemet checker at alt er OK (bank, beancount regnskabog draft posteringer er linked til bilag) og sætter herefter alle draft posteringer i approved (ved at genkøre med approved flag),flytter draft bilag til en anden folder og kører en git commit og push.
 
-Systemet skal understøtte følgende brugerstartede flows:
+## 3.4 Moms
+Systemet checker dato ligger på sidste dato i en momsperiode eller lige efter og at alt er OK (ingen draft posteringer) og danner draft posteringer til: luk af løbende momskonti, overførsel til skyldige momskonti. Brugeren skal køre Godkend for approve, commit og push.
 
-1) Automatisk dannelse af nye posteringer, som lægges i draft tilstand '!' i Beancount.
-2) Justering af draft posteringer mht.: target konto, posteringstype, betalt dato, momsbelagt beløb, momsfrie beløb.
-3) Godkendelse af draft posteringer hvor de overgår fra draft til final '*' i BeanCount. Godkendelse kan kun ske hvis: 1) BeanCount transaktioner stemmer og 2) Beregnet bank saldo stemmer med faktisk.
-4) Lukning af momsperiode hvorved der dannes draft moms posteringer.
-5) Lukning af regnskabsår. Konti lukkes ikke - der dannes kun de nødvendige posteringer ifht. beregnet skat.
-
-# 4 Flows i detaljer
-
-## 4.1 Automatisk dannelse af nye posteringer
-Må kun ske hvis der ikke er posteringer i draft tilstand.
-
-Ideelt set er bankkonto transaktioner, salgs- og løn-information opdateret og alle bilag downloaded og behandlet.
-
-### 4.1.1 Salgsposteringer
-Eksisterende salgsposteringer for perioden læses fra regnskab.beancount.
-Salgsinformation indlæses og alle salgsposteringer for perioden genberegnes:
-- Momsbelagt beløb beregnes ud fra fundne priser og timeinformation i salgsfilen.
-- Beregnet moms.
-- Beregnet totalpris.
-- Draft sættes hvis postering ikke er i eksisterende regnskab.beancount eller final.
-og posteringer skrive ned i en fil navngivet "generated/salg<periode>.beancount". 
-
-### 4.1.2 Lønposteringer
-Eksisterende lønposteringer for perioden læses fra regnskab.beancount.
-Løninformation indlæses og der dannes nu ialt 4 posteringer for hver lønudbetaling:
-1) Total lønudgift.
-2) Skyldig betaling til ansat.
-3) Skyldig betaling til SKAT.
-4) Skyldig betaling til ATP.
-5) Skyldig betaling til lønudbyder.
-Posteringer er i draft med mindre der findes en eksisterende postering i regnskab.beancount.
-
-### 4.1.3 Udgifter og betaling af disse.
-Eksisterende lønposteringer for perioden læses fra regnskab.beancount.
-Løninformation indlæses og der dannes nu ialt 4 posteringer for hver lønudbetaling:
-1) Total lønudgift.
-2) Skyldig betaling til ansat.
-3) Skyldig betaling til SKAT.
-4) Skyldig betaling til ATP.
-5) Skyldig betaling til lønudbyder.
-Posteringer er i draft med mindre der findes en eksisterende postering i regnskab.beancount.
-
-- 
-- 
-- kunde, dato, konsulenttimer og supporttimer. Ud fra en information om lønpriser pr. kunde over tid skal systemet generere fakturaer og posteringer baseret på denne information.
-- 
-Systemet skal være opbygget så der *ikke* arbejdes direkte i BeanCount filer, men disse skal i stedet genereres via Python scripts. I stedet dannes der beancount posteringer ved at:
-- Parse downloaded bankkonto CSV med generering af ny posteringer via mapninsgfiler.
-- Tilføje entries til en salgsfil hvorved der dannes fakturaer og posteringer.
-- Tilføje entries til en lønfil hvorved der dannes posteringer.
-
-Det giver flg. flows:
-## Afstemning af bankkonto
-Brugeren starter med at:
-- Downloade bankkonto CSV ind i firmaets folder.
-- Sørger for at nye bilag er downloaded til firmaets bilags folder.
-
-Herefter kalder brugeren python script med argumenter, som fortæller at beancount filer skal genereres og for hvilket årstal.
-Script viser fejl hvis: 
-- transaktioner i bankkonto ikke kan identificeres, 
-- der mangler konti i account.csv,
-- der mangler transaktionstyper for fundne konti,
-- der mangler priser til de salgstyper der ligger i salgsinformationen,
-- antal nye bilag matcher ikke antal nye transaktioner, som kræver et bilag,
-- der mangler salgs og eller løn-information som modsvarer transaktioner i bankkonto.
-Hvis der ikke er fejl gør scriptet flg.:
-- opdaterer alle beancount filer for det givne år,
-- tilføjer en default mapning mellem konto/betalt dato og konto/posteret dato pr. ny bank transaktion hvor default mapning indeholder bilagsreference, momsbelagt pris og momsfri pris.
-- viser en status vha. beancount queries kørt i perioden fra den sidst godkendte kørsel og  den nye kørsel.
-
-## opdatering af salgs- og løn-information
-Brugeren starter med at:
-- Opdatere fil med salgsinformation hvis der er foretaget nye salg.
-- Opdatere fil med løninformation hvis der er foretaget nye lønkørsler.
-Herefter kalder brugeren python script med argumenter, som fortæller at beancount filer skal genereres og for hvilket årstal.
-Script stopper hvis der ikke er nye salgs eller løninformationer foretaget siden sidste kørsel.
-Script viser fejl hvis: 
-- der mangler priser til de salgstyper der ligger i salgsinformationen,
-Hvis der ikke er fejl gør scriptet flg.:
-- opdaterer alle beancount filer for det givne år,
-- viser en status vha. beancount queries kørt i perioden fra den sidst godkendte kørsel og  den nye kørsel.
-
-## Godkendelse af afstemning af bankkonto
-Brugeren skal nu sørge for at checke og om nødvendigt opdatere default mapning:
-- er bilag korrekt? Hvis nej korrigeres bilagsreference
-- bilagset checkes: er momsbelagt og momsfri pris korrekt? Hvis nej korrigeres momsbelagt pris i mapningsfil.
-Efter at default mapning er godkendt sikrer brugeren sig at alt er korrekt ved at køre  en status kørsel som er samme som ovenfor, men selvfølgelig uden opdatering af beancount filer og mapning.
-Herefter kalder brugeren python script som fortæller at afstemning skal godkendes.
-Scriptet sørger for at beancount filer, mapning og dato for sidste kørsel gemmes (her er der lagt op at det gemmes i versionskontrol).
-
-## Lukning af momsperiode
-Systemet har i status kørslen fortalt at momsperioden kan lukkes.
-Brugeren kalder python script med argument, som fortæller at momsperiode skal lukkes.
-Scriptet afbryder med fejl hvis:
-1) sidste afstemningsdato < lukkedato for momsperiode eller
-2) luk af momsperiode allere er foretaget
-Hvis der ikke er fejl tilføjer scriptet postering til beancount filen med:
-1) resulterende moms
-2) luk af skyldig moms konto med omvendt postering
-3) luk af tilgodehavende moms omvendt postering
-og opdaterer beancount fil i versionskontrol.
-
-## Remindere
-- momsperiode skal lukkes,
-- moms skal betales,
-- løn skal køres,
-- løn skal betales,
-- regnskabsperiode skal lukkes,
-- a-conto skat skal betales
-- virksomhedsskat skal betales
+## 3.5 Remindere
+Brugeren starter reminder funktion.
+Systemet viser:
+- skal momsperiode lukkes,
+- skal moms betales,
+- skal løn køres,
+- skal løn betales,
+- skal regnskabsperiode lukkes,
+- skal a-conto skat betales
+- skal virksomhedsskat betales
+- er der ubetalte salgsfakturaer.
 
 ### Manglende betaling debitorer
 Systemet viser i status kørsel om resulterende moms ikke er lukket af transaktion i bankkonto CSV.
@@ -173,11 +85,16 @@ Umiddelbart tænkes det at afstemning og opdatering af løn/salg samles i en kø
 
 
 # 3. ARKITEKTUR OG FILSTRUKTUR
+Applikationen ligger adskilt fra regnskabsdata i et git repo (public eller private).
+Applikationen skal kunne installeres med uv pip install sammen med beancount og fava.
+Filstrukturen er:
+ /src/ python kode
+ /templates/ - Jinja2 HTML-skabeloner til fakturering.
+
+Firmaregnskab skal ligge i sit eget git private repository med flg. struktur 
+
 Systemet skal være opbygget i følgende struktur:
 
-/src/ python kode
-
-/templates/ - Jinja2 HTML-skabeloner til fakturering.
 
 /firmanavn/ - her ligger firmaets filer inklusive genererede beancount filer. I roden ligger reagnskab.beancount som inkluderer filer fra queries og renskabsperioder.
 
