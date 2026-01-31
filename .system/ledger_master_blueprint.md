@@ -5,20 +5,44 @@ Rolle: Du er en Senior Software Arkitekt og Ekspert i: LLMDansk Bogføring, Pyth
 # 2. Formål
 Implementering af modulært Python-baseret system skræddersyet til danske virksomhedsregler.
 
-Systemet skal virke ved at generere beancount filer, baseret på flg. input:
-- bankkonto transaktioner enten downloaded manuelt til CSV, hentet via broker eller via screenshot som overføres til en indbakke folder.
-- Information om salg som lægges ind i en fil med flg. information pr. salg: kunde, dato, konsulenttimer og supporttimer. Ud fra en information om salgspriser pr. kunde over tid skal systemet generere fakturaer og posteringer baseret på denne information.
-- Information om lønudbetalinger som lægges i en fil med flg. information pr. lønudbetaling: nettoløn, skat (AM-bidrag +  ...) og ATP bidrag.
-- Screenshots af bilag, som via en mobiltelefon app og en registrering automatisk ender i en forudbestemt indbakke folder. Ideelt set behandles modtagne bilag af en eller flere LLMs således at : 1) relevant beløb ekstraheres fra bilag, 2) bilag roteres automatisk efter behov, 3) bilag nedskaleres tli en passende størrelse.
+Systemet skal virke ved at generere beancount filer, som lægges i et privat git repo.
+Der vil typisk være et git repo pr. firma, men kan udvides hvis en kunde vil administrere flere sammenhængende firmaer. Derfor organiseres firma data i en folder struktur, som kan indeholde flere firmaer.
 
-Målet er at det ikke skal være svært for brugeren at arbejde direkte i BeanCount filer.
-BeanCount anvendes kun for at 1) kontrollere automatisk generedede postering og 2) få overblik over selskabets "tilstand".
+Systemet skal generere beancount filer ud fra flg. input:
+- bankkonto transaktioner manuelt downloadede eller hentet via broker.
+- Information om salg, som lægges ind i en fil med flg. information pr. salg: kunde, dato, konsulenttimer og supporttimer. På basis af fil med om salgspriser pr. kunde over tid skal systemet generere fakturaer i PDF eller elektronisk og beancount posteringer.
+- Information om lønudbetalinger som læses i en fil med flg. information pr. lønudbetaling: periode, dato, nettoløn, skat (AM-bidrag +  ...) og ATP bidrag. På basis af dette skal systemet danne BeanCount posteringer.
+- Screenshots af bilag overført fra en mobiltelefon app til en forudbestemt indbakke folder i firma folderen.
 
-Der arbejdes altid i en bestemt periode, som har sin egen folder: 2021, 2022, osv. for firma med lige regnskabsår.
+Herudover skal der dannes BeanCount posteringer ved:
+- Momsperiode afslutning.
+- Regnskabsperiode afslutning.
 
-Et regnskab skal have en "regnskab.beancount" fil som inkluderer automatisk genererede posteringer fra alle perioder.
+Systemet skal vær designet så der kun meget sjældent vil være behov for at foretage manuelle posteringer i BeanCount filerne.
 
 # 3. Flows
+
+## 3.1 Generering og justering af nye posteringer
+Bruger sørger for at information om løn og sale er opdateret og kører kommandoen "opdater".
+Systemet indlæseser posteringer i approved tilstand og genererer herefter nye posteringer i draft tilstand:
+- Salg: Systemet danner alle posteringer i draft tilstand, fjerner dem som er i approved, appender de resterende til filen "generated/salg<periode>.beancount" og danner fakturaer for posteringer i draft tilstand.
+- Løn: Løn posteringer dannes ud fra samme koncept hvor posteringer gemmes i filen "generated/salg<periode>.beancount"
+- Nye bank transaktioner identificeres og der dannes posteringer for udgifter, salg betalt og betalte løn posteringer. Type og konto bestemmes ud fra beskrivelses feltet i bank transaktionen gerne med brug af LLM. Hvis en konto, så skal posteringen gemmes i et særskilt fil for manuel behandling.
+
+For posteringer dannet ud fra bank transaktioner skal systemet finde flg. information:
+- Udgift: 
+ at de skal gemmes i et særskilt fil for manuel behandling.
+
+
+- 
+- Udgifter: Udgifts posteringer dannes ud fra samme koncept.
+- Systemet danner alle posteringer, springer dem over som er approved og danner fakturaer for de nye posteringer.
+- 
+- ligger i beancount approvedNye posteringer tilføjes til filen "generated/salg<periode>.beancount" og 
+- Løn: Nye posteringer tilføjes til filen "generated/loen<periode>.beancount".
+- 
+enkeltstående Windows server.   |    tbl_PrinterQueue |
+
 Systemet skal understøtte følgende brugerstartede flows:
 
 1) Automatisk dannelse af nye posteringer, som lægges i draft tilstand '!' i Beancount.
