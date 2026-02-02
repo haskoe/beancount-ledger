@@ -1,0 +1,10 @@
+{
+    "files.watcherExclude": {
+        "**/inbox/**": true,
+        "**/attachments/**": true
+    },
+    "search.exclude": {
+        "**/inbox": true,
+        "**/attachments": true
+    }
+}

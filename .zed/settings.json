@@ -1,0 +1,27 @@
+{
+  // Fortæller Zed (og AI'en) at vi kører Python via uv
+  "languages": {
+    "Python": {
+      "format_on_save": "on",
+      "formatter": {
+        "external": {
+          "command": "uv",
+          "arguments": ["run", "black", "-"]
+        }
+      },
+      "language_servers": ["pyright", "..."]
+    }
+  },
+  // Projekt-specifikke AI-instrukser
+  "assistant": {
+  },
+  // Ignorer tunge data-mapper så Zed forbliver lynhurtig
+  "file_scan_exclusions": [
+    "**/.git",
+    "**/node_modules",
+    "**/__pycache__",
+    "**/.venv",
+    "**/inbox",
+    "**/attachments"
+  ]
+}

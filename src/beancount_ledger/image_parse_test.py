@@ -15,6 +15,13 @@ def process_image_to_b64(pil_img):
     return base64.b64encode(buffered.getvalue()).decode("utf-8")
 
 
+def process_image(image):
+    """Konverterer et PIL-billede til base64-streng"""
+    buffered = BytesIO()
+    image.save(buffered, format="JPEG")
+    return base64.b64encode(buffered.getvalue()).decode("utf-8")
+
+
 def analyze_and_extract(pil_img):
     """Sender billede til Qwen3-VL for både rotationstjek og OCR"""
     b64_img = process_image_to_b64(pil_img)
@@ -97,7 +104,7 @@ def handle_image_test(ctx):
         return
 
     for filename in files:
-        if not filename.startswith("p"):
+        if not filename.startswith("2"):
             continue
         print(f"\nBehandler: {filename}...")
         file_path = os.path.join(ctx.indbakke_dir, filename)
@@ -110,10 +117,21 @@ def handle_image_test(ctx):
             pages = convert_from_path(file_path, 300)
             for i, page in enumerate(pages):
                 print(f"  - Side {i + 1} af {len(pages)}")
-                b64_img = process_image(page)
-                extracted_text += f"\n--- SIDE {i + 1} ---\n" + get_text_from_ai(
-                    b64_img
-                )
+                b64_img = process_image_to_b64(page)
+                img_result = analyze_and_extract(b64_img)
+                if img_result:
+                    angle = img_result.get("rotation_needed", 0)
+                    extracted_values = img_result.get("extracted_values", "")
+                    print(angle)
+                    print(extracted_values)
+                    # result = extract_fields(extracted_values)
+                    # Gem resultatet
+                    with open(output_path, "w", encoding="utf-8") as f:
+                        f.write(result)
+                # print(f"Færdig! Gemt i {output_path}")
+                # extracted_text += f"\n--- SIDE {i + 1} ---\n" + get_text_from_ai(
+                #     b64_img
+                # )
 
         # Håndter Billeder
         else:
@@ -126,7 +144,7 @@ def handle_image_test(ctx):
                 extracted_values = img_result.get("extracted_values", "")
                 print(angle)
                 print(extracted_values)
-                result = extract_fields(extracted_values)
+                # result = extract_fields(extracted_values)
                 # Gem resultatet
                 with open(output_path, "w", encoding="utf-8") as f:
                     f.write(result)

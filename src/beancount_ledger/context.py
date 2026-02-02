@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from .driver.connector import BeancountConnector
 from . import constants as const
 from . import util
+from .config_parser import load_company_config, load_account_mapping
 from functools import cached_property
 from decimal import Decimal
 
@@ -98,11 +99,38 @@ class LedgerContext:
     def _jinja_env(self):
         return Environment(loader=DictLoader(templates_dict))
 
+    @cached_property
+    def _jinja_env(self):
+        return Environment(loader=DictLoader(templates_dict))
+
+    @cached_property
+    def company_config(self):
+        p = self.company_metadata_path("config.yaml")
+        if os.path.exists(p):
+            return load_company_config(p)
+        return None
+
+    @cached_property
+    def account_config(self):
+        p = self.company_metadata_path("accounts.yaml")
+        if os.path.exists(p):
+            return load_account_mapping(p)
+        return None
+
     def get_template(self, template_name: str):
         return self._jinja_env.get_template(template_name)
 
     @cached_property
     def all_accounts(self):
+        if self.account_config:
+            return {
+                acc.external_id.casefold(): (
+                    acc.default_parent,
+                    acc.beancount_account,
+                )
+                for acc in self.account_config.accounts
+            }
+
         return util.csv_to_dict(
             self.company_metadata_path(const.ACCOUNT_CSV),
             const.CSV_SPECS[const.ACCOUNT_CSV],
@@ -117,6 +145,17 @@ class LedgerContext:
 
     @cached_property
     def account_regexes(self):
+        if self.account_config:
+            return [
+                (
+                    acc.external_id,
+                    re.compile(acc.regex, re.IGNORECASE),
+                    acc.regex.casefold(),
+                )
+                for acc in self.account_config.accounts
+                if acc.regex
+            ]
+
         return util.csv_to_list(
             self.company_metadata_path(const.ACCOUNT_REGEX_CSV),
             const.CSV_SPECS[const.ACCOUNT_REGEX_CSV],
@@ -127,37 +166,16 @@ class LedgerContext:
             ),
         )
 
-    def get_bank_to_invoice_date(self, period: str):
-        tmp = util.csv_to_dict(
-            self.company_period_path(period, const.BANK_TO_INVOICE_DATE_CSV),
-            const.CSV_SPECS[const.BANK_TO_INVOICE_DATE_CSV],
-            lambda x: (";".join([x[const.DATE_POSTED_KEY], x[const.DESCRIPTION]]), x),
-        )
-        return tmp
-
-    def get_bank_csv(self, period: str):
-        return reversed(
-            util.load_csv(
-                self.company_period_path(period, "bank.csv"),
-                const.CSV_SPECS[const.BANK_CSV],
-            )
-        )
-
-    def get_loen_csv(self, period: str):
-        return util.load_csv(
-            self.company_period_path(period, "loen.txt"),
-            const.CSV_SPECS[const.LOEN_CSV],
-        )
-
-    def get_udbytte_csv(self, period: str):
-        return util.load_csv(
-            self.company_period_path(period, "udbytte.txt"),
-            const.CSV_SPECS[const.UDBYTTE_CSV],
-        )
-
     @cached_property
     def prices(self):
         prices = defaultdict(lambda: defaultdict(list))
+        if self.company_config and self.company_config.prices:
+            for p in self.company_config.prices:
+                prices[p.account_name][p.price_type].append(
+                    (datetime.combine(p.start_date, datetime.min.time()), p.price)
+                )
+            return prices
+
         for row in util.load_csv(
             self.company_metadata_path(const.PRICES_CSV),
             const.CSV_SPECS[const.PRICES_CSV],
@@ -168,7 +186,6 @@ class LedgerContext:
                     Decimal(row[const.PRICE]),
                 )
             )
-        # return {k: dict(v) for k, v in _prices.items()}
         return prices
 
     def get_salg_csv(self, period):
