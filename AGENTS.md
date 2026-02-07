@@ -4,15 +4,20 @@ This document provides essential information for AI agents working in this codeb
 
 ## Project Overview
 
-This is a **Danish accounting system** built on top of [Beancount](https://github.com/beancount/beancount), a double-entry accounting system.
+This is a **accounting system** built on top of [Beancount](https://github.com/beancount/beancount), a double-entry accounting system.
+The system generates beancount entries from bank transactions, sales, payroll in text files.
 
 ### Key Features
 
-- **CSV-based data import** for bank transactions, sales, payroll, and other financial data
-- **Jinja2 templating** for generating Beancount entries
-- **YAML configuration** for company-specific settings
+- **CSV-based data files** for system-wide and company derived chart of accounts, bank transactions, sales, payroll, and other financial data
+- **Jinja2 templating** for generating Beancount entries and invoices
+- **YAML configuration** for basic company-specific settings
 - **Beancount Query Language (BQL)** for querying ledger data
 - **Modular command structure** with subcommands for different operations
+- **Pip installable** system with dependencies managed in `pyproject.toml`
+- **Anonymous test data** required for all unit tests to ensure privacy and reproducibility
+- **Attachment parsing** using LLM/OCR to extract data from PDFs and images
+- **Bank transaction matching** using parsed attachment data to automatically link documents with ledger entries
 
 ### Target Audience
 
@@ -29,6 +34,9 @@ This system is designed for Danish companies and accountants, with support for:
 ```bash
 # Install dependencies using uv
 uv sync
+
+# Alternatively, install using pip
+pip install .
 
 # Run the application
 python -m beancount_ledger
@@ -140,6 +148,7 @@ tests/
 
 ### Test Patterns
 
+- **Anonymous Test Data**: The repository MUST contain anonymous test data for unit tests. No real-world PII or financial data from specific companies should be used.
 - **Unit tests**: Test individual functions and methods
 - **Integration tests**: Test handler workflows
 - **Mocking**: Use `unittest.mock` for external dependencies
@@ -396,6 +405,19 @@ Transactions go through a workflow:
 2. Reconciled (afstem)
 3. Approved (godkend)
 4. Finalized
+
+## Attachment Handling and Matching
+
+### Workflow
+
+1. **OCR/LLM Extraction**: The system parses attachments (PDF, JPG, PNG) using vision models to extract fields like:
+   - Date, Payee, Total Amount, VAT Amount, Invoice Number.
+2. **Data Normalization**: Extracted values are normalized to match internal data structures (e.g., Danish date formats, decimal separators).
+3. **Automated Matching**: The system matches parsed attachments with bank transactions based on:
+   - Amount matching
+   - Date proximity
+   - Payee/Text similarity
+4. **Linkage**: Once matched, the attachment reference is added to the Beancount transaction metadata.
 
 ## Project-Specific Context
 
