@@ -10,10 +10,13 @@ import os
 def handle_opdater(ctx):
     kontoplan_accounts = []
     document = "20190702_121057_cd10fd68f0c094fd149ecc32e21088d9.jpg"
+    bilag = [fn for fn in os.listdir(ctx.bilag_path) if '_' in fn]
+    missing = []
 
     for period in ctx.periods:
         # process each row in bank_csv
         errors = []
+        print(period)
         bank_to_invoice_date = ctx.get_bank_to_invoice_date(period)
         bank_transactions = BankTransaction.from_bank_csv(ctx.get_bank_csv(period))
         transactions = []
@@ -75,6 +78,13 @@ def handle_opdater(ctx):
             med_moms = transaction_type[const.MED_MOMS] > 0
 
             if antal_posteringer == 2:
+                bilags_id = f'{bank_transaction.date_posted.strftime("%y%m%d")}_{str(abs(bank_transaction.amount)).replace(".", "")}'
+                document = None
+                documents = [b for b in bilag if bilags_id in b]
+                if len(documents)==1:
+                    document = documents[0]
+                # print(bilags_id,bank_transaction.amount)
+                # a=bb
                 transaction = Transaction(
                     date_posted=bank_transaction.date_posted,
                     text="Posteret",
@@ -82,11 +92,13 @@ def handle_opdater(ctx):
                     amount=bank_transaction.amount,
                     account1=full_account_name,
                     account2=f"Liabilities:Kreditorer:{account_name}",
-                    document=document,
+                    document=document or 'Missing',
                     template_name=med_moms and const.MED_MOMS or const.UDEN_MOMS,
                 )
                 if med_moms:
                     transaction.set_vat("Assets:Moms:KoebMoms", const.VAT_PCT, 0)
+                if not document:
+                    missing.append(f'{bilags_id} [{account_name}]')
                 transactions.append(transaction)
 
             account1 = (
@@ -113,11 +125,14 @@ def handle_opdater(ctx):
         ctx.render_period_transactions(period, transactions)
 
         salg_output = Transaction.from_salg_csv(ctx.get_salg_csv(period), ctx)
-        bilag_base_path = os.path.join(
-            "/home/heas/proj/heas0404/aps/repos/ledger/aps", period, "salg"
-        )
-        bilag = sorted(os.listdir(bilag_base_path))
+        # bilag_base_path = os.path.join(
+        #     "/home/heas/proj/heas0404/aps/repos/ledger/aps", period, "salg"
+        # )
+        # bilag = sorted(os.listdir(bilag_base_path))
         # print(bilag)
+        with open(os.path.join( ctx.company_path, 'missing.txt'), 'w') as f:
+            f.write("\n".join(sorted(missing)))
+        
 
         ctx.render_transactions(period, "salg", salg_output)
 

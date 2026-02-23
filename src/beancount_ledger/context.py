@@ -29,6 +29,34 @@ class LedgerContext:
         if not self.enddate:
             self.enddate = datetime(int(self.period), 12, 31).date()
 
+    def get_bank_to_invoice_date(self, period: str):
+        tmp = util.csv_to_dict(
+            self.company_period_path(period, const.BANK_TO_INVOICE_DATE_CSV),
+            const.CSV_SPECS[const.BANK_TO_INVOICE_DATE_CSV],
+            lambda x: (";".join([x[const.DATE_POSTED_KEY], x[const.DESCRIPTION]]), x),
+        )
+        return tmp
+
+    def get_bank_csv(self, period: str):
+        return reversed(
+            util.load_csv(
+                self.company_period_path(period, "bank.csv"),
+                const.CSV_SPECS[const.BANK_CSV],
+            )
+        )
+
+    def get_loen_csv(self, period: str):
+        return util.load_csv(
+            self.company_period_path(period, "loen.txt"),
+            const.CSV_SPECS[const.LOEN_CSV],
+        )
+
+    def get_udbytte_csv(self, period: str):
+        return util.load_csv(
+            self.company_period_path(period, "udbytte.txt"),
+            const.CSV_SPECS[const.UDBYTTE_CSV],
+        )
+
     @cached_property
     def indbakke_dir(self) -> str:
         return path.join(self.company_path, "indbakke")
@@ -49,6 +77,10 @@ class LedgerContext:
     @cached_property
     def company_path(self) -> str:
         return path.join(self.root_path, self.company_name)
+
+    @cached_property
+    def bilag_path(self) -> str:
+        return path.join(self.company_path, 'bilag')
 
     @cached_property
     def company_generated_path(self) -> str:
@@ -241,15 +273,14 @@ class LedgerContext:
 
 templates_dict = {
     "med_moms": """{{ date_posted }} * "{{ text }}" "{{ extra_text}}"
-  {{ external_link }}
-  {{ external_link }}
-  {{ document }}
+  external_link: "{{ external_link }}"
+  document: "{{ document }}"
   {{ account1.ljust(50) }} {{ amount_wo_vat_negated.rjust(20) }} {{ currency }}
   {{ account2.ljust(50) }} {{ amount.rjust(20) }} {{ currency }}
   {{ account3.ljust(50) }} {{ vat_negated.rjust(20) }} {{ currency }}""",
     "uden_moms": """{{ date_posted }} * "{{ text }}" "{{ extra_text}}"
-  {{ external_link }}
-  {{ document }}
+  external_link: "{{ external_link }}"
+  document: "{{ document }}"
   {{ account1.ljust(50) }} {{ amount_negated.rjust(20) }} {{ currency }}
   {{ account2.ljust(50) }} {{ amount.rjust(20) }} {{ currency }}""",
     "moms_luk": """{{ date_posted }} * "Momsafregning" "Lukning af moms {{ period }}"

@@ -71,10 +71,8 @@ class Transaction:
             const.DATE_POSTED: util.format_date(self.date_posted),
             const.AMOUNT_WO_VAT_NEGATED: util.format_money(-sign * self.amount_wo_vat),
             const.VAT_NEGATED: util.format_money(-sign * self.vat),
-            "document": self.document and f'document: "{self.document}"',
-            "external_link": self.document
-            and self.url
-            and f'external_link: "{self.url}/{self.document}"',
+            "document": self.document or '',
+            "external_link": self.document and self.url and "{self.url}/{self.document}" or "",
             # "date_posted": self.date_posted,
             # todo
             # "date_posted": self.date_posted,
