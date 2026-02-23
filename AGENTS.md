@@ -39,7 +39,7 @@ uv sync
 pip install .
 
 # Run the application
-python -m beancount_ledger
+uv run python -m beancount_ledger.main opdater --enddate 20251231
 
 # Show help
 python -m beancount_ledger --help

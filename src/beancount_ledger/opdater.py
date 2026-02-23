@@ -76,10 +76,10 @@ def handle_opdater(ctx):
 
             antal_posteringer = transaction_type[const.ANTAL_POSTERINGER]
             med_moms = transaction_type[const.MED_MOMS] > 0
+            document = None
 
             if antal_posteringer == 2:
                 bilags_id = f'{bank_transaction.date_posted.strftime("%y%m%d")}_{str(abs(bank_transaction.amount)).replace(".", "")}'
-                document = None
                 documents = [b for b in bilag if bilags_id in b]
                 if len(documents)==1:
                     document = documents[0]
@@ -92,7 +92,7 @@ def handle_opdater(ctx):
                     amount=bank_transaction.amount,
                     account1=full_account_name,
                     account2=f"Liabilities:Kreditorer:{account_name}",
-                    document=document or 'Missing',
+                    document=f'bilag/{document}' or 'Missing',
                     template_name=med_moms and const.MED_MOMS or const.UDEN_MOMS,
                 )
                 if med_moms:
