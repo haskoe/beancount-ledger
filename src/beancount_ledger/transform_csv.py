@@ -110,7 +110,7 @@ def transform_bank_csv(input_file, output_file):
     #         print("Advarsel: Kunne ikke finde en garanteret sammenhæng mellem Beløb og Saldo.")
             
     #     # Tilknyt til output dataframe
-    #     output_df['Beløb'] = df[belob_col].apply(lambda x: f"{x:.2f}" if pd.notna(x) else "")
+    #     output_df['Amount'] = df[belob_col].apply(lambda x: f"{x:.2f}" if pd.notna(x) else "")
     #     output_df['Saldo'] = df[saldo_col].apply(lambda x: f"{x:.2f}" if pd.notna(x) else "")    if len(numeric_cols) >= 2:
         # Her antager vi at det første tal er beløb, og det andet er saldo.
         # Dette kan du bytte om på, hvis logikken for din specifikke bank er anderledes.

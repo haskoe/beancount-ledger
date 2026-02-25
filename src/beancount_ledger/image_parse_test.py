@@ -36,7 +36,7 @@ Return ONLY a JSON object with these keys:
 
     prompt1 = """Analyze this image and perform two tasks:
 1. Determine the rotation angle (0, 90, 180, or 270) needed to make the text upright for reading.
-2. Extract values from the table in the image with column headers: "DATO", "POSTERINGSTEKST", "AFSENDER INFO", "BELØB", "OPRINDELIGT BELØB" and "SALDO"
+2. Extract values from the table in the image with column headers: "DATE", "POSTERINGSTEKST", "AFSENDER INFO", "BELØB", "OPRINDELIGT BELØB" and "SALDO"
 Return ONLY a JSON object with these keys:
 - "rotation_needed": (int)
 - "extracted_values": (array of array of strings)"""

@@ -8,9 +8,9 @@ from pydantic import BaseModel, Field, field_validator
 class BankCsvFormat(BaseModel):
     """Konfiguration af bankens CSV-eksportformat."""
 
-    date_column: str = "Dato"
+    date_column: str = "Date"
     description_column: str = "Tekst"
-    amount_column: str = "Beløb"
+    amount_column: str = "Amount"
     balance_column: str = "Saldo"
     date_format: str = "%d-%m-%Y"
     decimal_separator: Literal[",", "."] = ","
