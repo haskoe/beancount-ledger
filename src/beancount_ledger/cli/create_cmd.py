@@ -17,18 +17,7 @@ from .main import cli, pass_global, GlobalContext
     metavar="CVR",
     help="8-cifret CVR-nummer for det nye firma.",
 )
-@click.option(
-    "--company-name",
-    default="",
-    metavar="NAVN",
-    help="Firmanavn der skrives til settings.yaml.",
-)
-@click.option(
-    "--first-year",
-    default="",
-    metavar="YYYY",
-    help="Første regnskabsår. Standard: indeværende år.",
-)
+
 @pass_global
 def create_cmd(
     ctx: GlobalContext,
@@ -56,7 +45,7 @@ def create_cmd(
         return
 
     create_company(
-        root=root,
+        app_context = ctx.app_context,
         cvr=effective_cvr,
     )
 

@@ -17,16 +17,20 @@ class AppContext:
     current_state: CurrentState
 
     def __post_init__(self):
-        if not self.settings.start_date:
+        if not self.settings or not self.settings.start_date:
             return
         
         init_year(self.root_path, self.get_data_dir(self.settings.start_date.year), self.settings.start_date.year)
 
-    def get_data_dir(self, year: int) -> Path:
-        return self.root_path / "data" / str(year)
-
     @cached_property
     def data_dir(self) -> Path:
+        return self.root_path / "data"
+
+    def get_year_dir(self, year: int) -> Path:
+        return self.data_dir / str(year)
+
+    @cached_property
+    def year_dir(self) -> Path:
         return self.get_data_dir(str(self.current_state.current_year))
 
     @cached_property

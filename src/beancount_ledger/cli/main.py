@@ -110,6 +110,9 @@ def cli(
     # Auto-initialisér first_year-mappe for alle kommandoer undtagen create
     if ctx.invoked_subcommand not in (None, "create"):
         _auto_init_first_year(ctx.obj)
+    else:
+        ctx.obj.app_context = AppContext(root_path=ctx.obj.resolve_root(), settings=None, current_state=None)
+        
 
 
 # ---------------------------------------------------------------------------

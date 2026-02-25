@@ -17,6 +17,7 @@ from pathlib import Path
 
 from beancount_ledger.application.kontoplan_service import generate_kontoplan
 from beancount_ledger.infrastructure import company_layout, git_io
+from beancount_ledger.application.app_context import AppContext
 
 # ---------------------------------------------------------------------------
 # Skabelon-mapping: (skabelonfilnavn, destinationsfilnavn i firma-roden)
@@ -39,7 +40,7 @@ _RENDERED: frozenset[str] = frozenset({"settings.yaml", "firma_pyproject.toml.tx
 
 
 def create_company(
-    root: Path,
+    app_context: AppContext,
     cvr: str,
 ) -> None:
     """Opret et nyt firma-repo under *root*.
@@ -49,8 +50,16 @@ def create_company(
                       eksisterer).
         cvr:          CVR-nummer der indsættes i settings.yaml og pyproject.toml.
     """
+    root = app_context.root_path
     root.mkdir(parents=True, exist_ok=True)
-    company_layout.ensure_dirs(root)
+    for d in (
+        app_context.data_dir,
+        app_context.generated_dir,
+        app_context.invoices_dir,
+        app_context.receipts_dir,
+        app_context.receipts_intray_dir,
+    ):
+        d.mkdir(parents=True, exist_ok=True)
 
     substitutions = {
         "cvr": cvr,
