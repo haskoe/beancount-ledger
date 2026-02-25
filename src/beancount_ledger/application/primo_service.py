@@ -15,9 +15,11 @@ primo.beancount overskrives, da primoposteringer aldrig ændrer antal — kun da
 from __future__ import annotations
 
 from pathlib import Path
+from datetime import date
 
+from beancount_ledger.application.app_context import AppContext
 from beancount_ledger.domain.beancount_types import BeancountPosting, BeancountTransaction
-from beancount_ledger.domain.primo import PrimoFile
+from beancount_ledger.domain.primo import PrimoEntry, PrimoFile
 from beancount_ledger.infrastructure import company_layout, git_io
 from beancount_ledger.infrastructure.beancount_writer import (
     append_transactions,
@@ -29,24 +31,12 @@ class PrimoBalanceError(Exception):
     """Kastes hvis primo-posteringerne ikke balancerer."""
 
 
-def generate_primo(root: Path) -> int:
-    """Generer (eller regenerer) primo.beancount fra primo.csv.
-
-    Args:
-        root: Firma-repoets rod.
-
-    Returns:
-        Antal posteringer skrevet til filen.
-
-    Raises:
-        FileNotFoundError: Hvis primo.csv ikke eksisterer.
-        PrimoBalanceError: Hvis primo-posteringerne ikke summerer til 0.
-    """
-    primo_path = company_layout.primo_yaml(root)
+def generate_primo(app_context: AppContext) -> int:
+    primo_path = app_context.primo_csv
     if not primo_path.exists():
         raise FileNotFoundError(f"primo.csv ikke fundet: {primo_path}")
 
-    primo = PrimoFile.from_yaml(primo_path)
+    primo = PrimoFile.from_csv(primo_path)
 
     if not primo.is_balanced():
         total = sum(e.amount for e in primo.entries)
@@ -55,9 +45,9 @@ def generate_primo(root: Path) -> int:
             "Ret beløbene i primo.csv så de balancerer."
         )
 
-    transactions = [_to_transaction(primo, entry_idx) for entry_idx in range(len(primo.entries))]
+    transactions = [_to_transaction(entry, app_context.primo_date) for entry in primo.entries]
 
-    out_path = company_layout.primo_beancount(root)
+    out_path = company_layout.primo_beancount(app_context.root_path)
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
     # Primo overskrives altid (indholdet ændrer sig ved redit af primo.csv)
@@ -65,21 +55,19 @@ def generate_primo(root: Path) -> int:
     ensure_beancount_header(out_path, "Primobalance")
     append_transactions(out_path, transactions)
 
-    git_io.commit_all(root, "primo updated")
+    git_io.commit_all(app_context.root_path, "primo updated")
     return len(transactions)
 
 
-def _to_transaction(primo: PrimoFile, entry_idx: int) -> BeancountTransaction:
-    """Byg en BeancountTransaction for én primo-entry."""
-    entry = primo.entries[entry_idx]
-    narration = entry.description if entry.description else f"Primo {entry.account}"
+def _to_transaction(entry: PrimoEntry, primo_date: date) -> BeancountTransaction:
+    narration = f"Primo {entry.beancount_account}"
 
     return BeancountTransaction(
-        date=primo.date,
+        date=primo_date,
         narration=narration,
         tags=["primo"],
         postings=[
-            BeancountPosting(account=entry.account, amount=entry.amount),
+            BeancountPosting(account=entry.beancount_account, amount=entry.amount),
             BeancountPosting(account="Equity:Opening-Balances"),  # auto-balance
         ],
     )

@@ -15,18 +15,8 @@ from pydantic import BaseModel, Field, field_validator
 class CurrentState(BaseModel):
     """Aktuel regnskabstilstand, gemt i current.yaml."""
 
-    current_year: int = Field(..., ge=1900, le=2100)
-    current_vat_period: str = Field(..., min_length=1)
-    last_approved_date: datetime.date | None = None
-
-    @field_validator("last_approved_date", mode="before")
-    @classmethod
-    def _parse_date(cls, v: object) -> datetime.date | None:
-        if v is None:
-            return None
-        if isinstance(v, datetime.date):
-            return v
-        return datetime.date.fromisoformat(str(v).strip())
+    current_year: int | None = None
+    current_vat_period: str | None = None
 
     @field_validator("current_vat_period", mode="before")
     @classmethod

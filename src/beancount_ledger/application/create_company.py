@@ -26,7 +26,10 @@ _ROOT_TEMPLATES: list[tuple[str, str]] = [
     ("primo.csv", "primo.csv"),
     ("sales_accounts.yaml", "sales_accounts.yaml"),
     ("standardkontoplan.csv", "standardkontoplan.csv"),
-    ("ydelser.yaml", "ydelser.yaml"),    ("bank_keywords.yaml", "bank_keywords.yaml"),    ("firma_gitignore.txt", ".gitignore"),
+    ("current.yaml", "current.yaml"),
+    ("ydelser.yaml", "ydelser.yaml"),    
+    ("bank_keywords.yaml", "bank_keywords.yaml"),    
+    ("firma_gitignore.txt", ".gitignore"),
 #    ("firma_pyproject.toml.txt", "pyproject.toml"),
     ("regnskab.beancount", "regnskab.beancount"),
 ]
@@ -37,26 +40,20 @@ _RENDERED: frozenset[str] = frozenset({"settings.yaml", "firma_pyproject.toml.tx
 
 def create_company(
     root: Path,
-    company_name: str,
     cvr: str,
-    first_year: int,
 ) -> None:
     """Opret et nyt firma-repo under *root*.
 
     Args:
         root:         Absolut sti til firma-repoets rod (oprettes hvis den ikke
                       eksisterer).
-        company_name: Firmanavn der indsættes i settings.yaml.
         cvr:          CVR-nummer der indsættes i settings.yaml og pyproject.toml.
-        first_year:   Første regnskabsår; bruges til at oprette data/<YYYY>/.
     """
     root.mkdir(parents=True, exist_ok=True)
-    company_layout.ensure_dirs(root, first_year)
+    company_layout.ensure_dirs(root)
 
     substitutions = {
-        "company_name": company_name,
         "cvr": cvr,
-        "first_year": str(first_year),
     }
 
     templates_pkg = importlib.resources.files("beancount_ledger.infrastructure.templates")

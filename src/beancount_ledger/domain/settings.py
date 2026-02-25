@@ -1,8 +1,13 @@
-"""Domænemodel for firma-indstillinger (settings.yaml)."""
-
+from __future__ import annotations
 from typing import Literal
+from pathlib import Path
+from datetime import date
+from functools import cached_property
 
+import yaml
 from pydantic import BaseModel, Field, field_validator
+
+from beancount_ledger.util import date_util
 
 
 class BankCsvFormat(BaseModel):
@@ -66,11 +71,9 @@ class BankDownloadFormat(BaseModel):
 
 
 class Settings(BaseModel):
-    """Firmakonfiguration – læses fra settings.yaml i firma-repoets rod."""
-
     company_name: str = Field(..., min_length=1)
     cvr: str = Field(..., pattern=r"^\d{8}$")
-    first_year: int = Field(..., ge=1900, le=2100)
+    start_date: date
     month_start: int = Field(default=1, ge=1, le=12)
     vat_period_length: Literal["Q", "H", "Y"] = "Q"
     currency: str = Field(default="DKK", min_length=3, max_length=3)
@@ -90,3 +93,18 @@ class Settings(BaseModel):
     def cvr_strip(cls, v: str) -> str:
         """Fjern whitespace fra CVR."""
         return v.strip()
+
+    @field_validator("start_date", mode="before")
+    @classmethod
+    def _parse_date(cls, v: object) -> date:
+        return date_util.parse_date(v, "%Y%m%d")
+
+    @classmethod
+    def from_yaml(cls, path: Path) -> Settings:
+        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+        return cls.model_validate(data or {})
+    
+    @cached_property 
+    def first_year(self) -> int:
+        return self.start_date.year
+   

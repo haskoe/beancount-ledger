@@ -2,9 +2,9 @@
 # Oprettet af: beancount_ledger create
 # Se dokumentationen for alle felter.
 
-company_name: "{company_name}"
-cvr: "{cvr}"
-first_year: {first_year}
+company_name: ""
+cvr: ""
+start_date: 
 
 # Regnskabsår starter i måned (1=januar)
 month_start: 1

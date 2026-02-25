@@ -33,8 +33,6 @@ from .main import cli, pass_global, GlobalContext
 def create_cmd(
     ctx: GlobalContext,
     cvr: str,
-    company_name: str,
-    first_year: str,
 ) -> None:
     """Opret et nyt firma-repo med standard mappestruktur og konfigurationsfiler.
 
@@ -43,19 +41,15 @@ def create_cmd(
     """
     # Brug CVR fra global option hvis --cvr ikke er givet her (umuligt, da
     # local --cvr er required, men vi harmoniserer alligevel).
-    effective_cvr = cvr or ctx.cvr
+    effective_cvr = cvr
     if not effective_cvr:
         raise click.UsageError("--cvr er påkrævet.")
-
-    effective_first_year = int(first_year) if first_year else datetime.date.today().year
 
     root = ctx.resolve_root(effective_cvr)
 
     if ctx.verbose:
         click.echo(f"Opretter firma-repo: {root}")
-        click.echo(f"  company-name : {company_name}")
         click.echo(f"  cvr          : {effective_cvr}")
-        click.echo(f"  first-year   : {effective_first_year}")
 
     if ctx.dry_run:
         click.echo("[dry-run] ville oprette firma-repo under: " + str(root))
@@ -63,9 +57,7 @@ def create_cmd(
 
     create_company(
         root=root,
-        company_name=company_name,
         cvr=effective_cvr,
-        first_year=effective_first_year,
     )
 
     click.echo(f"Firma-repo oprettet: {root}")

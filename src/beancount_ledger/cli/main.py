@@ -8,6 +8,11 @@ from pathlib import Path
 import click
 
 
+from beancount_ledger.domain.settings import Settings
+from beancount_ledger.application.app_context import AppContext
+from beancount_ledger.domain.current import CurrentState
+
+
 @dataclass
 class GlobalContext:
     """Globale CLI-indstillinger videregivet til alle underkommandoer."""
@@ -16,6 +21,7 @@ class GlobalContext:
     cvr: str | None
     verbose: bool
     dry_run: bool
+    app_context: AppContext
 
     def resolve_root(self, cvr: str | None = None) -> Path:
         """Returnér firma-repoets rod.
@@ -32,44 +38,19 @@ pass_global = click.make_pass_decorator(GlobalContext)
 
 
 def _auto_init_first_year(ctx_obj: GlobalContext) -> None:
-    """Indlæs settings.yaml og opret data/<first_year>/ hvis den mangler.
-
-    Regenererer desuden kontoplan.beancount fra standardkontoplan.csv.
-    Kaldes automatisk af alle kommandoer undtagen ``create``.
-    Fejler lydløst hvis settings.yaml ikke eksisterer endnu.
-    """
-    from beancount_ledger.application.init_year import init_year
     from beancount_ledger.application.kontoplan_service import generate_kontoplan
     from beancount_ledger.infrastructure import company_layout
     from beancount_ledger.infrastructure.yaml_io import load_yaml
 
-    root = ctx_obj.resolve_root()
-    settings_path = company_layout.settings_yaml(root)
-    if not settings_path.exists():
-        return
+    root_path = ctx_obj.resolve_root()
+    current_state = CurrentState.from_yaml(root_path / "current.yaml")
+    settings = Settings.from_yaml(root_path / "settings.yaml")
 
-    generate_kontoplan(root)
+    app_context = AppContext(root_path=root_path, settings=settings, current_state=current_state)
+    ctx_obj.app_context = app_context
 
-    try:
-        data = load_yaml(settings_path)
-    except Exception:
-        return
+    generate_kontoplan(root_path)
 
-    first_year = data.get("first_year")
-    if not first_year or not isinstance(first_year, int):
-        return
-
-    year_dir = company_layout.data_dir(root, first_year)
-    if year_dir.exists():
-        return
-
-    if ctx_obj.dry_run:
-        click.echo(f"[dry-run] ville oprette data/{first_year}/ (first_year fra settings.yaml)")
-        return
-
-    created = init_year(root, first_year)
-    if created and ctx_obj.verbose:
-        click.echo(f"Årsmappe data/{first_year}/ oprettet (first_year fra settings.yaml).")
 
 
 @click.group()
@@ -117,6 +98,7 @@ def cli(
         cvr=cvr,
         verbose=verbose,
         dry_run=dry_run,
+        app_context=None,  # blive sat senere
     )
     if verbose:
         click.echo(f"base-dir : {ctx.obj.base_dir}")

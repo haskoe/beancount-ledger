@@ -5,45 +5,43 @@ Svarende til spec afsnit 4.9.
 
 from __future__ import annotations
 
-import datetime
 from decimal import Decimal
 from pathlib import Path
 
-import yaml
+import csv
 from pydantic import BaseModel, Field, field_validator
 
 
 class PrimoEntry(BaseModel):
     """Én primopostering."""
 
-    account: str = Field(..., min_length=1)
+    beancount_account: str = Field(
+        ...,
+        min_length=1,
+        description="Fuldt beancount-kontonavn, fx 'Income:DK:1010:Varesalg:Momspligtigt'",
+    )
     amount: Decimal
-    description: str = ""
 
-    @field_validator("account", mode="before")
+    @field_validator("beancount_account", mode="before")
     @classmethod
-    def _strip(cls, v: object) -> str:
+    def account_strip(cls, v: object) -> str:
         return str(v).strip()
 
 
 class PrimoFile(BaseModel):
     """Primobalance, indlæst fra primo.csv."""
 
-    date: datetime.date
     entries: list[PrimoEntry] = Field(default_factory=list)
 
-    @field_validator("date", mode="before")
     @classmethod
-    def _parse_date(cls, v: object) -> datetime.date:
-        if isinstance(v, datetime.date):
-            return v
-        return datetime.date.fromisoformat(str(v).strip())
-
-    @classmethod
-    def from_yaml(cls, path: Path) -> PrimoFile:
-        """Indlæs primofil fra primo.csv."""
-        data = yaml.safe_load(path.read_text(encoding="utf-8"))
-        return cls.model_validate(data or {})
+    def from_csv(cls, path: Path) -> PrimoFile:
+        """Indlæs kontoplan fra en semikolon-separeret CSV-fil."""
+        rows: list[PrimoEntry] = []
+        with path.open(encoding="utf-8", newline="") as fh:
+            reader = csv.DictReader(fh, delimiter=";")
+            for row in reader:
+                rows.append(row)
+        return cls(entries = rows)
 
     def is_balanced(self) -> bool:
         """Kontroller om primo-posteringerne balancerer (sum == 0)."""

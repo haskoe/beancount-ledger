@@ -35,14 +35,15 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from beancount_ledger.application.app_context import AppContext
+
 # ---------------------------------------------------------------------------
 # Rodmapper
 # ---------------------------------------------------------------------------
 
 
-def data_dir(root: Path, year: int) -> Path:
-    """Returnér data/<YYYY>/ mappen."""
-    return root / "data" / str(year)
+def data_dir(app_context: AppContext) -> Path:
+    return app_context.root_path / "data" / str(app_context.current_state.current_year)
 
 
 def generated_dir(root: Path) -> Path:
