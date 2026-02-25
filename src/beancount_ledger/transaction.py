@@ -78,7 +78,7 @@ class Transaction:
             # "date_posted": self.date_posted,
             # "description": self.description,
             # "amount": self.amount,
-            # "total": self.total,
+            # "balance": self.total,
             # "transaction_type": self.transaction_type,
             # "amount_vat_liable": self.amount_vat_liable,
             # "amount_vat_non_liable": self.amount_vat_non_liable,

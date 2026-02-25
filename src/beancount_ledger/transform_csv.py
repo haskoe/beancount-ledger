@@ -3,7 +3,7 @@ import numpy as np
 
 DATE = 'date'
 AMOUNT = 'amount'
-TOTAL = 'total'
+TOTAL = 'balance'
 DESVC = 'description'
 
 def transform_bank_csv(input_file, output_file):
@@ -111,7 +111,7 @@ def transform_bank_csv(input_file, output_file):
             
     #     # Tilknyt til output dataframe
     #     output_df['Amount'] = df[belob_col].apply(lambda x: f"{x:.2f}" if pd.notna(x) else "")
-    #     output_df['Saldo'] = df[saldo_col].apply(lambda x: f"{x:.2f}" if pd.notna(x) else "")    if len(numeric_cols) >= 2:
+    #     output_df['Balance'] = df[saldo_col].apply(lambda x: f"{x:.2f}" if pd.notna(x) else "")    if len(numeric_cols) >= 2:
         # Her antager vi at det første tal er beløb, og det andet er saldo.
         # Dette kan du bytte om på, hvis logikken for din specifikke bank er anderledes.
 

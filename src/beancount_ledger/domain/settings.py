@@ -11,7 +11,7 @@ class BankCsvFormat(BaseModel):
     date_column: str = "Date"
     description_column: str = "Tekst"
     amount_column: str = "Amount"
-    balance_column: str = "Saldo"
+    balance_column: str = "Balance"
     date_format: str = "%d-%m-%Y"
     decimal_separator: Literal[",", "."] = ","
     encoding: str = "utf-8"
