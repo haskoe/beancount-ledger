@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import datetime
-
 import click
 
 from beancount_ledger.application.create_company import create_company
@@ -46,7 +44,6 @@ def create_cmd(
 
     create_company(
         app_context = ctx.app_context,
-        cvr=effective_cvr,
     )
 
     click.echo(f"Firma-repo oprettet: {root}")

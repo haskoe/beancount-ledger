@@ -39,16 +39,7 @@ class BankFile(BaseModel):
     def from_csv(
         cls,
         path: Path,
-        fmt: BankCsvFormat | None = None,
     ) -> BankFile:
-        """Indlæs bankfil fra CSV med konfigureret format.
-
-        Bruger Settings.bank_csv_format-standarder hvis `fmt` ikke er angivet.
-        """
-        if fmt is None:
-            fmt = BankCsvFormat()
-
-        dec_sep = fmt.decimal_separator
         rows: list[BankTransaction] = []
 
         with path.open(encoding=fmt.encoding, newline="") as fh:

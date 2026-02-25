@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import click
 
-from beancount_ledger.application.app_context import AppContext
 from beancount_ledger.application.primo_service import PrimoBalanceError, generate_primo
 from beancount_ledger.cli.main import GlobalContext, cli, pass_global
 

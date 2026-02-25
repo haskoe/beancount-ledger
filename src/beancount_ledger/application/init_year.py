@@ -6,8 +6,7 @@ Kaldes automatisk i update-flowet hvis mappen ikke eksisterer endnu.
 
 from __future__ import annotations
 
-import importlib.resources
-from pathlib import Path
+from beancount_ledger.application.app_context import AppContext
 from beancount_ledger.infrastructure import git_io
 
 # ---------------------------------------------------------------------------
@@ -21,10 +20,11 @@ _YEAR_TEMPLATES: list[tuple[str, str, bool]] = [
 ]
 
 
-def init_year(root_path: Path,year_path: Path, year: int) -> bool:
-    year_path.mkdir(parents=True, exist_ok=True)
+def init_year(app_context: AppContext) -> bool:
+    current_year = app_context.current_state.current_year
+    year_path = app_context.get_year_dir(current_year)
 
-    substitutions = {"year": str(year)}
+    substitutions = {"year": str(current_year)}
     templates_pkg = importlib.resources.files("beancount_ledger.infrastructure.templates")
 
     for template_name, dest_name, render in _YEAR_TEMPLATES:
@@ -35,5 +35,5 @@ def init_year(root_path: Path,year_path: Path, year: int) -> bool:
                 content = content.replace("{" + key + "}", value)
         dest.write_text(content, encoding="utf-8")
 
-    git_io.commit_all(root_path, f"year {year} created")
+    git_io.commit_all(app_context.root_path, f"year {current_year} created")
     return True

@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import warnings
 
 DATE = 'date'
 AMOUNT = 'amount'
@@ -7,6 +8,7 @@ TOTAL = 'balance'
 DESVC = 'description'
 
 def transform_bank_csv(input_file, output_file):
+    warnings.filterwarnings("ignore") 
     # 1. Læs CSV-filen ind. Da vi ikke har headers, lader vi pandas give dem tal-navne (0, 1, 2...)
     # Vi læser alt som tekst (str) først, så vi selv har fuld kontrol over formateringen.
     df = pd.read_csv(input_file, header=None, dtype=str, sep=";", engine='python')
@@ -17,6 +19,7 @@ def transform_bank_csv(input_file, output_file):
     
     # 2. Heuristik: Analyser hver kolonne for at finde dens type
     for col in df.columns:
+        print(type(df[col]))
         # Fjerner NaN/tomme felter i vores test
         sample = df[col].dropna()
         if sample.empty:
@@ -122,4 +125,6 @@ def transform_bank_csv(input_file, output_file):
 
 # Kør funktionen (husk at ændre filnavnene)
 if __name__ == "__main__":
-    transform_bank_csv('firma/aps34720908/2026/bank.csv', 'output.csv')
+    from . util import csv_util
+    df = csv_util.bank_csv_to_dataframe('firma/aps34720908/2026/bank.csv')
+    print(df)

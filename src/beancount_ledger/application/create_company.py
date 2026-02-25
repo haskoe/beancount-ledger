@@ -58,6 +58,7 @@ def create_company(
         app_context.invoices_dir,
         app_context.receipts_dir,
         app_context.receipts_intray_dir,
+        app_context.bank_download_dir,
     ):
         d.mkdir(parents=True, exist_ok=True)
 

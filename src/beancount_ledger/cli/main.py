@@ -39,19 +39,16 @@ pass_global = click.make_pass_decorator(GlobalContext)
 
 def _auto_init_first_year(ctx_obj: GlobalContext) -> None:
     from beancount_ledger.application.kontoplan_service import generate_kontoplan
-    from beancount_ledger.infrastructure import company_layout
-    from beancount_ledger.infrastructure.yaml_io import load_yaml
 
-    root_path = ctx_obj.resolve_root()
-    current_state = CurrentState.from_yaml(root_path / "current.yaml")
-    settings = Settings.from_yaml(root_path / "settings.yaml")
+    app_context = ctx_obj.app_context
 
-    app_context = AppContext(root_path=root_path, settings=settings, current_state=current_state)
+    settings = Settings.from_yaml(app_context.settings_yaml)
+    current_state = CurrentState.from_yaml(app_context.current_yaml)
+
+    app_context = AppContext(root_path=app_context.root_path, settings=settings, current_state=current_state)
     ctx_obj.app_context = app_context
 
-    generate_kontoplan(root_path)
-
-
+    generate_kontoplan(app_context.root_path)
 
 @click.group()
 @click.option(
@@ -108,10 +105,9 @@ def cli(
             click.echo("dry-run  : aktiveret")
 
     # Auto-initialisér first_year-mappe for alle kommandoer undtagen create
+    ctx.obj.app_context = AppContext(root_path=ctx.obj.resolve_root(), settings=None, current_state=None)
     if ctx.invoked_subcommand not in (None, "create"):
         _auto_init_first_year(ctx.obj)
-    else:
-        ctx.obj.app_context = AppContext(root_path=ctx.obj.resolve_root(), settings=None, current_state=None)
         
 
 
@@ -120,4 +116,4 @@ def cli(
 # ---------------------------------------------------------------------------
 from beancount_ledger.cli import create_cmd as _create_cmd  # noqa: E402, F401
 from beancount_ledger.cli import primo_cmd as _primo_cmd  # noqa: E402, F401
-
+from beancount_ledger.cli import opdater_cmd as _opdater_cmd  # noqa: E402, F401
