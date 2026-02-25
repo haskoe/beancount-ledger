@@ -1,0 +1,18 @@
+[project]
+name = "{cvr}"
+version = "0.1.0"
+description = "Regnskab for {cvr}"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "beancount_ledger",
+]
+
+# Vælg ét af følgende:
+#
+# 1) Lokal udvikling (beancount_ledger-repo og firma-repo ligger side om side):
+[tool.uv.sources]
+    beancount_ledger = { path = "../beancount_ledger", editable = true }
+#
+# 2) Installeret pakke fra PyPI / intern package index:
+# (fjern [tool.uv.sources]-sektionen og kør: uv add beancount_ledger)

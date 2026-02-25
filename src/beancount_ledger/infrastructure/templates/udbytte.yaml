@@ -1,0 +1,21 @@
+# Udbytteudbetalinger — {year}
+# Bruges af: beancount_ledger generate udbytte
+#
+# Format:
+#   run_date:        vedtagelsesdato (YYYY-MM-DD)
+#   recipient_id:    modtager-id (bruges i transaction ID)
+#   name:            modtagerens navn
+#   gross_amount:    bruttoudbytte i DKK
+#   withholding_tax: tilbageholdt udbytteskat (normalt 27 % op til bundgrænse)
+#   net_amount:      nettoudbetaling (= gross_amount - withholding_tax)
+
+payments: []
+
+# Eksempel:
+# payments:
+#   - run_date: 2025-06-15
+#     recipient_id: ejer-001
+#     name: Ejer Navn
+#     gross_amount: 100000.00
+#     withholding_tax: 27000.00
+#     net_amount: 73000.00

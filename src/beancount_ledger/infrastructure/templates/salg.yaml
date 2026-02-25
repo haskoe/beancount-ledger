@@ -1,0 +1,25 @@
+# Salgsfakturaer — {year}
+# Bruges af: beancount_ledger generate salg
+# Én post pr. faktura. Tilføj nye fakturaer løbende — eksisterende rettes IKKE.
+#
+# Format:
+#   invoice_number: unik fakturanummer (tekststreng)
+#   invoice_date:   fakturadato (YYYY-MM-DD)
+#   customer_id:    reference til customer_id i sales_accounts.yaml
+#   template:       fakturaskabelon — valgfrit (default: default)
+#   lines:
+#     - service_id:    reference til service_id i ydelser.yaml
+#       quantity:      mængde (decimal)
+#       price_override: overskriver standardpris — valgfrit (null = brug standard)
+
+invoices: []
+
+# Eksempel:
+# invoices:
+#   - invoice_number: "2025-001"
+#     invoice_date: 2025-01-31
+#     customer_id: kunde-001
+#     lines:
+#       - service_id: konsulent-time
+#         quantity: 10
+#         price_override: null

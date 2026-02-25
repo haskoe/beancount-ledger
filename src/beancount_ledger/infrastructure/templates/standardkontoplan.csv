@@ -1,0 +1,50 @@
+id;beancount_account;description;default_vat
+1010;Income:DK:1010:Varesalg:Momspligtigt;Varesalg (momspligtigt);S25
+1020;Income:DK:1020:Varesalg:Momsfrit;Varesalg (momsfrit);N0
+1050;Income:DK:1050:Ydelser:EU:Uden-Moms;Salg af ydelser i EU;N0
+1845;Expenses:DK:1845:Digitaltabonnement;Digitale abonnementer;I25
+2010;Expenses:DK:2010:Varekøb:Indland;Varekøb i Danmark (moms);I25
+2020;Expenses:DK:2020:Varekøb:EU;Varekøb i EU (reverse charge);EU25
+2030;Expenses:DK:2030:Varekøb:Import;Varekøb uden for EU (Import);EU25
+3100;Expenses:DK:3100:Husleje;Husleje lokaler;I25
+3120;Expenses:DK:3120:El-Vand-Varme;Energi og forsyning;I25
+3130;Expenses:DK:3130:Telefoni-Internet;Mobil og internetforbindelse;I25
+3600;Expenses:DK:3600:Markedsfoering;Annoncering og reklame;I25
+3620;Expenses:DK:3620:Repræsentation:Ej-Fradrag;Repræsentation (uden fradrag);R25
+3700;Expenses:DK:3700:Kontorartikler;Kontorartikler og mindre anskaffelser;I25
+3710;Expenses:DK:3710:Software:SaaS;Hosting og software-abonnementer;I25
+3720;Expenses:DK:3720:IT-Udstyr;Mindre indkøb af EDB-udstyr (straksafskrivning);I25
+3800;Expenses:DK:3800:Revisor:Rådgivning;Ekstern rådgivning og revisor;I25
+6000;Expenses:DK:6000:Loen:Gager;Bruttoløn/Gager;N0
+6005;Expenses:DK:6005:Loen:AM-Bidrag;Arbejdsmarkedsbidrag udgift;N0
+6010;Expenses:DK:6010:Loen:Pension;Pension virksomhedens andel;N0
+6020;Expenses:DK:6020:Loen:ATP;ATP udgift;N0
+6050;Expenses:DK:6050:Personale-Goder;Skattefrie personalegoder;N0
+7000;Expenses:DK:7000:Finans:Bankgebyr;Bankgebyrer og vekselomkostninger;N0
+7010;Expenses:DK:7010:Finans:Renteudgifter;Renteudgifter bank/lån;N0
+7020;Expenses:DK:7020:Finans:Renter:Skat;Renteudgifter SKAT (ikke fradrag);N0
+7100;Expenses:DK:7100:Finans:Kursregulering;Valutakursreguleringer;N0
+7110;Expenses:DK:7110:Finans:Afrunding-Differencer;Afrunding og kursdifferencer;N0
+7199;Expenses:DK:7199:Unknown;Ukendt;N0
+7200;Income:DK:7200:Finans:Renteindtægter;Renteindtægter;N0
+8020;Assets:DK:8020:Inventar-Maskiner;Inventar og driftsmidler;I25
+8100;Assets:DK:8100:Skat:Udskudt-Skatteaktiv;Udskudt skatteaktiv;N0
+8210;Assets:DK:8210:Debitorer;Tilgodehavender fra salg;N0
+8310;Assets:DK:8310:Bank:Erhverv;Primær driftskonto (DKK);N0
+8320;Assets:DK:8320:Bank:Valuta:EUR;Valutakonto (EUR);N0
+8400;Assets:DK:8400:Mellemregning:Ejer;Mellemregning med ejer;N0
+9000;Equity:DK:9000:Virksomhedskapital;Virksomhedskapital (Anpartskapital);N0
+9010;Equity:DK:9010:Egenkapital:Primo;Egenkapital primo;N0
+9020;Equity:DK:9020:Egenkapital:Udbytte;Udloddet udbytte;N0
+OB;Equity:Opening-Balances;Primo-saldi modkonto (Beancount standard);N0
+9500;Liabilities:DK:9500:Moms:Udgående;Salgsmoms;N0
+9510;Liabilities:DK:9510:Moms:Indgående;Købsmoms;N0
+9520;Liabilities:DK:9520:Moms:EU-Erhverv;Moms af erhvervskøb (EU/Import);N0
+9530;Liabilities:DK:9530:Moms:Afregning;Momsafregningskonto;N0
+9600;Liabilities:DK:9600:Loen:Skyldig-Loen;Skyldig løn (netto);N0
+9610;Liabilities:DK:9610:Loen:Skyldig-A-Skat;Skyldig A-skat;N0
+9620;Liabilities:DK:9620:Loen:Skyldig-AM;Skyldig AM-bidrag;N0
+9630;Liabilities:DK:9630:Loen:Skyldig-ATP;Skyldig ATP og Samlet Betaling;N0
+9650;Liabilities:DK:9650:Udbytte:Skyldig-Skat;Skyldig udbytteskat til SKAT;N0
+9660;Liabilities:DK:9660:Udbytte:Skyldig-Ejer;Skyldigt udbytte til ejer;N0
+9700;Liabilities:DK:9700:Kreditorer;Leverandørgæld;N0

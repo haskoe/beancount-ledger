@@ -1,0 +1,28 @@
+# Lønkørsler — {year}
+# Bruges af: beancount_ledger generate loen
+# Én post pr. lønkørsel (normalt månedlig).
+#
+# Format:
+#   run_date:      udbetalingsdato (YYYY-MM-DD)
+#   employee_id:   medarbejder-id (bruges i transaction ID)
+#   name:          medarbejderens navn
+#   gross_salary:  bruttoløn i DKK
+#   tax:           A-skat inkl. AM-bidrag
+#   atp_employee:  ATP, medarbejderens andel
+#   atp_employer:  ATP, virksomhedens andel
+#   net_salary:    nettoudbetaling (= gross_salary - tax - atp_employee)
+#   period:        lønperiode fx "2025-01"
+
+runs: []
+
+# Eksempel:
+# runs:
+#   - run_date: 2025-01-31
+#     employee_id: ejer
+#     name: Ejer Navn
+#     gross_salary: 50000.00
+#     tax: 15000.00
+#     atp_employee: 99.45
+#     atp_employer: 199.00
+#     net_salary: 34900.55
+#     period: "2025-01"

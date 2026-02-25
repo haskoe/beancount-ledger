@@ -1,0 +1,45 @@
+# beancount_ledger firma-konfiguration
+# Oprettet af: beancount_ledger create
+# Se dokumentationen for alle felter.
+
+company_name: "{company_name}"
+cvr: "{cvr}"
+first_year: {first_year}
+
+# Regnskabsår starter i måned (1=januar)
+month_start: 1
+
+# Momsperiode: Q=kvartal, H=halvår, Y=år
+vat_period_length: H
+
+currency: DKK
+
+bank_csv_format:
+  date_column: Dato
+  description_column: Tekst
+  amount_column: Beløb
+  balance_column: Saldo
+  date_format: "%d-%m-%Y"
+  decimal_separator: ","
+  encoding: utf-8
+
+# Fakturaskabelon (default = medfølgende HTML-skabelon)
+invoice_template: default
+
+# LLM-model til posteringsforslag (kræver OPENAI_API_KEY)
+llm_model: "llama-server:http://s990:8081"
+
+# Format for bankens download-CSV (bruges af `beancount_ledger import-bank`)
+# Standardværdier svarer til Lollands Sparekasse / LSB-format (ingen header,
+# semikolon-separeret, kolonne 0=dato, 1=tekst, 2=beløb, 3=saldo).
+bank_download_format:
+  has_header: false
+  date_col: 0
+  text_col: 1
+  amount_col: 2
+  balance_col: 3
+  date_format: "%d-%m-%Y"
+  decimal_separator: ","
+  thousands_separator: "."
+  encoding: utf-8
+  skip_rows: 0

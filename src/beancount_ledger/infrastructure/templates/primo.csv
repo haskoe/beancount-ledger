@@ -1,0 +1,13 @@
+Assets:DK:8310:Bank:Erhverv;0
+Equity:DK:9010:Egenkapital:Primo;0
+Equity:DK:9000:Virksomhedskapital;0
+Assets:DK:8210:Debitorer;0
+Assets:DK:8100:Skat:Udskudt-Skatteaktiv;0
+Equity:DK:9020:Egenkapital:Udbytte;0
+Liabilities:DK:9600:Loen:Skyldig-Loen;0
+Liabilities:DK:9660:Udbytte:Skyldig-Ejer;0
+Liabilities:DK:9610:Loen:Skyldig-A-Skat;0
+Liabilities:DK:9620:Loen:Skyldig-AM;0
+Liabilities:DK:9630:Loen:Skyldig-ATP;0
+Liabilities:DK:9650:Udbytte:Skyldig-Skat;0
+Liabilities:DK:9530:Moms:Afregning;0

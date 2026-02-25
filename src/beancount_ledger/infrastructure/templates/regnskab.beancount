@@ -1,0 +1,12 @@
+; documents udkommenteret da vi bruger external_link
+;option "documents" "." 
+
+option "operating_currency" "DKK"
+
+include "kontoplan.beancount"
+
+include "generated/*.beancount"
+
+; 4. RAPPORTERING
+; fava har ikke danish translation
+; 1900-01-01 custom "fava-option" "language" "da"

@@ -17,3 +17,7 @@ dependencies = [
     "urllib3<2",
     "weasyprint>=67.0",
 ]
+
+[project.scripts]
+cli = "beancount_ledger.cli.main:cli"
+fava = "fava.cli:main"

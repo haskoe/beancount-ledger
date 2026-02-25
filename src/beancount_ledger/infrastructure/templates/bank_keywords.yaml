@@ -1,0 +1,71 @@
+# Bank keyword-regler til konto-klassificering (BR-B02)
+# Bruges af `bank_service` til at matche transaktionsbeskrivelser mod konti.
+#
+# Format:
+#   - keywords: [liste af strenge der søges case-insensitivt i beskrivelsen]
+#     account:  beancount-kontonavn
+#     notes:    valgfri kommentar
+#
+# Reglerne afprøves i rækkefølge – første match vinder.
+# Hvis ingen regel matcher bruges kontoen "Expenses:DK:Unknown".
+
+rules:
+  - keywords: [github, atlassian, azure, heroku, digitalocean, hetzner, aws, gcp]
+    account: Expenses:DK:3710:Software:SaaS
+    notes: Sky-tjenester og software-abonnementer
+
+  - keywords: [politiken, berlingske, jyllands-posten, zetland, ing.dk]
+    account: Expenses:DK:3600:Markedsfoering
+    notes: Medier og reklame
+
+  - keywords: [husleje, leje, erhvervspark, kontorfællesskab]
+    account: Expenses:DK:3100:Husleje
+    notes: Husleje og lokaler
+
+  - keywords: [norlys, nrgi, ewii, energi, el, vand, varme]
+    account: Expenses:DK:3120:El-Vand-Varme
+    notes: Energi og forsyning
+
+  - keywords: [tdc, telenor, yousee, telmore, elgiganten mobil, 3 mobil]
+    account: Expenses:DK:3130:Telefoni-Internet
+    notes: Mobil og internet
+
+  - keywords: [staples, kontorplus, officedepot, kontor]
+    account: Expenses:DK:3700:Kontorartikler
+    notes: Kontorartikler
+
+  - keywords: [revisor, advokat, rådgivning, kpmg, deloitte, pwc, bdo]
+    account: Expenses:DK:3800:Revisor:Rådgivning
+    notes: Ekstern rådgivning
+
+  - keywords: [loen, løn, nettoløn, netto løn, salary]
+    account: Liabilities:DK:9600:Loen:Skyldig-Loen
+    notes: Lønudbetaling
+
+  - keywords: [a-skat, skat, skattestyrelsen]
+    account: Liabilities:DK:9610:Loen:Skyldig-A-Skat
+    notes: A-skat til SKAT
+
+  - keywords: [am-bidrag, am bidrag]
+    account: Liabilities:DK:9620:Loen:Skyldig-AM
+    notes: AM-bidrag
+
+  - keywords: [atp]
+    account: Liabilities:DK:9630:Loen:Skyldig-ATP
+    notes: ATP-betaling
+
+  - keywords: [udbytte, dividend]
+    account: Liabilities:DK:9660:Udbytte:Skyldig-Ejer
+    notes: Udbyttebetaling
+
+  - keywords: [moms, momsafregning]
+    account: Liabilities:DK:9530:Moms:Afregning
+    notes: Momsafregning til SKAT
+
+  - keywords: [rente, renteudgift]
+    account: Expenses:DK:7010:Finans:Renteudgifter
+    notes: Renter
+
+  - keywords: [gebyr, bankgebyr, overfoerselsgebyr]
+    account: Expenses:DK:7000:Finans:Bankgebyr
+    notes: Bankgebyrer

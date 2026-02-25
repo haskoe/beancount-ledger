@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Faktura {{ invoice_number }}</title>
+<style>
+  body { font-family: Arial, sans-serif; font-size: 11pt; color: #222; margin: 0; padding: 40px; }
+  h1   { font-size: 20pt; margin-bottom: 0; }
+  .meta { margin-top: 4px; color: #555; font-size: 10pt; }
+  table { width: 100%; border-collapse: collapse; margin-top: 24px; }
+  th    { background: #f0f0f0; text-align: left; padding: 6px 8px; font-size: 10pt; }
+  td    { padding: 5px 8px; border-bottom: 1px solid #e0e0e0; font-size: 10pt; }
+  .right { text-align: right; }
+  .total-row td { font-weight: bold; border-top: 2px solid #999; }
+  .footer { margin-top: 40px; font-size: 9pt; color: #888; }
+  .address { margin-top: 16px; }
+  .address strong { display: block; }
+</style>
+</head>
+<body>
+
+<h1>FAKTURA</h1>
+<div class="meta">
+  Fakturanr: <strong>{{ invoice_number }}</strong> &nbsp;|&nbsp;
+  Dato: <strong>{{ invoice_date }}</strong> &nbsp;|&nbsp;
+  Forfaldsdato: <strong>{{ due_date }}</strong>
+</div>
+
+<table style="width:100%; margin-top:20px;">
+<tr>
+  <td style="vertical-align:top; width:50%;">
+    <strong>Fra:</strong><br/>
+    {{ company_name }}<br/>
+    CVR: {{ cvr }}
+  </td>
+  <td style="vertical-align:top; width:50%;">
+    <strong>Til:</strong><br/>
+    {{ customer_name }}<br/>
+    {% if customer_cvr %} CVR: {{ customer_cvr }}<br/>{% endif %}
+    {% if customer_email %} {{ customer_email }}<br/>{% endif %}
+  </td>
+</tr>
+</table>
+
+<table>
+  <thead>
+    <tr>
+      <th>Beskrivelse</th>
+      <th class="right">Antal</th>
+      <th>Enhed</th>
+      <th class="right">Enhedspris</th>
+      <th class="right">Beløb eks. moms</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for line in lines %}
+    <tr>
+      <td>{{ line.name }}</td>
+      <td class="right">{{ line.quantity }}</td>
+      <td>{{ line.unit }}</td>
+      <td class="right">{{ line.unit_price }}</td>
+      <td class="right">{{ line.line_total }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+  <tfoot>
+    <tr>
+      <td colspan="4" class="right">Total eks. moms</td>
+      <td class="right">{{ total_excl_vat }}</td>
+    </tr>
+    <tr>
+      <td colspan="4" class="right">Moms (25%)</td>
+      <td class="right">{{ vat_amount }}</td>
+    </tr>
+    <tr class="total-row">
+      <td colspan="4" class="right">Total inkl. moms</td>
+      <td class="right"><strong>{{ total_incl_vat }}</strong></td>
+    </tr>
+  </tfoot>
+</table>
+
+<div class="footer">
+  Betaling til: {{ bank_account }} &nbsp;|&nbsp; Reference: {{ invoice_number }}
+</div>
+
+</body>
+</html>

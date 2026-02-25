@@ -1,0 +1,21 @@
+# Kundekatalog — bruges til fakturagenerering og betalingsforventning
+# Bruges af: beancount_ledger generate salg
+#
+# Format pr. kunde:
+#   customer_id:       unik nøgle (bruges i salg.yaml)
+#   name:              officielt firmanavn
+#   cvr:               CVR-nummer (8 cifre) — valgfrit for udenlandske kunder
+#   beancount_account: debitor-konto (normalt Assets:DK:8210:Debitorer)
+#   email:             fakturerings-email — valgfrit
+#   payment_days:      betalingsfrist i dage (default: 30)
+
+customers: []
+
+# Eksempel:
+# customers:
+#   - customer_id: kunde-001
+#     name: Eksempel ApS
+#     cvr: "12345678"
+#     beancount_account: Assets:DK:8210:Debitorer
+#     email: faktura@eksempel.dk
+#     payment_days: 30

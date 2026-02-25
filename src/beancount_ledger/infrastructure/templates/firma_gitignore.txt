@@ -1,0 +1,21 @@
+# Firma-repo – genereret af beancount_ledger create
+# Aldrig tjek disse ind – de indeholder faktiske regnskabsdata eller midlertidige filer
+
+# Bilag (indeholder reelle dokumenter)
+receipts/
+receipts-intray/
+
+# Genererede fakturaer
+generated/invoices/
+
+# Miljøvariabler (API-nøgler m.v.)
+.env
+.envrc
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/

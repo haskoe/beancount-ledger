@@ -1,0 +1,21 @@
+# Ydelseskatalog — prisliste til brug ved fakturagenerering
+# Bruges af: beancount_ledger generate salg  (refereret fra salg.yaml linje-poster)
+#
+# Format pr. ydelse:
+#   service_id:     unik nøgle (bruges i salg.yaml)
+#   name:           navn til fakturalinje
+#   standard_price: enhedspris ekskl. moms i DKK
+#   unit:           fx "time", "stk", "mdr"
+#   vat_applicable: true/false (om 25% moms tillægges)
+#   income_account: beancount-omsætningskonto
+
+services: []
+
+# Eksempel:
+# services:
+#   - service_id: konsulent-time
+#     name: Konsulentydelse
+#     standard_price: 1000.00
+#     unit: time
+#     vat_applicable: true
+#     income_account: Income:DK:1010:Varesalg:Momspligtigt
