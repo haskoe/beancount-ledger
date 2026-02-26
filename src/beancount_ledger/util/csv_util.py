@@ -1,12 +1,16 @@
-import pandas as pd
-import numpy as np
-from dataclasses import dataclass
 from collections.abc import Callable
+from dataclasses import dataclass
+
+import numpy as np
+import pandas as pd
+
+from .. import constants as const
+
 
 @dataclass
 class CsvColumnDetector:
     column_name: str
-    detector_func: Callable[[pd.Series], pd.Series]
+    detector_func: Callable[[pd.Series], pd.Series | None]
 
 def detect_date_column(col: pd.Series) -> pd.Series | None:
     parsed_dates = pd.to_datetime(col, errors='coerce', dayfirst=True)
@@ -24,21 +28,50 @@ def detect_danish_amount_column(col: pd.Series) -> pd.Series | None:
 def detect_text_column(col: pd.Series, min_length: int) -> pd.Series | None:
     stripped = col.str.strip()
     mean = stripped.str.len().mean()
-    print(mean)
     if mean > min_length:
         return stripped
     return None
 
 def bank_csv_to_dataframe(input_file) -> pd.DataFrame | None:
     detectors = [
-        CsvColumnDetector(column_name='date', detector_func=detect_date_column),
-        CsvColumnDetector(column_name='amount', detector_func=detect_danish_amount_column),
-        CsvColumnDetector(column_name='total', detector_func=detect_danish_amount_column),
-        CsvColumnDetector(column_name='description', detector_func=lambda col: detect_text_column(col, min_length=20)),
+        CsvColumnDetector(column_name=const.DATE, detector_func=detect_date_column),
+        CsvColumnDetector(column_name=const.TOTAL, detector_func=detect_danish_amount_column),
+        CsvColumnDetector(column_name=const.AMOUNT, detector_func=detect_danish_amount_column),
+        CsvColumnDetector(column_name=const.DESCRIPTION, detector_func=lambda col: detect_text_column(col, min_length=20)),
     ]
-    return csv_to_dataframe(input_file, detectors)
+    result = csv_to_dataframe(input_file, detectors)
+    if result is not None:
+        # nu skal vi checke:
+        # 1: er amount og total er korrekte eller skal de byttes om
+        # 2: er rækker sorteret korrekt: asc efter dato
+        col_date = result[const.DATE]
+        if col_date.iloc[0] > col_date.iloc[-1]:
+            result = result.iloc[::-1] # vendes om
 
-def csv_to_dataframe(input_file, detectors: list[CsvColumnDetector]) -> pd.DataFrame:
+        for i in range(2): # kører først med nuv sortering og anden gang med modsat hvis der kun er en dato forekomst
+            col_date = result[const.DATE]
+
+            col_names = (const.AMOUNT, const.TOTAL)
+            for a,t in (col_names,reversed(col_names)):
+                expected = result[t].shift(1) + result[a]
+                is_close = np.isclose(result[t].iloc[1:], expected.iloc[1:])
+                if is_close.all():
+                    print(a)
+                    if a != const.AMOUNT:
+                        result = result[[const.DATE, const.TOTAL, const.AMOUNT, const.DESCRIPTION]]
+                    return result
+
+            # hvis vi er her kan det kun være fordi der er fejl i bank csv filen
+            # eller der IKKE er forskellige datoer i csv filen
+            if i<1 and col_date.iloc[0] == col_date.iloc[-1]:
+                result = result.iloc[::-1] # vendes om
+                print(result)
+            else:
+                break
+
+    return None
+
+def csv_to_dataframe(input_file, detectors: list[CsvColumnDetector]) -> pd.DataFrame | None:
     df = pd.read_csv(input_file, header=None, dtype=str, sep=";", engine='python')
 
     detected = {}
@@ -53,7 +86,6 @@ def csv_to_dataframe(input_file, detectors: list[CsvColumnDetector]) -> pd.DataF
 
             detected_col = detector.detector_func(col)
             if detected_col is not None:
-                print('d',col_idx,idx)
                 detected[idx] = detected_col
                 break
 

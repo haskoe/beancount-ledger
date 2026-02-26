@@ -16,6 +16,7 @@ INCOME_SALG = "Income:Salg"
 BANK_ERHVERV = "Assets:Bank:BankErhverv"
 
 # CSV column names
+DATE = "date"
 DATE_POSTED = "date_posted"
 ACCOUNT = "account"
 AMOUNT_WITH_VAT = "amount_with_vat"
