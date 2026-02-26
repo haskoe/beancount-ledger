@@ -25,7 +25,10 @@ import yaml
 from beancount_ledger.application.app_context import AppContext
 from beancount_ledger.domain.audit import AuditEntry, AuditFile
 from beancount_ledger.domain.bank import BankFile, BankTransaction
-from beancount_ledger.domain.beancount_types import BeancountPosting, BeancountTransaction
+from beancount_ledger.domain.beancount_types import (
+    BeancountPosting,
+    BeancountTransaction,
+)
 from beancount_ledger.domain.chart_of_accounts import ChartOfAccounts
 from beancount_ledger.domain.settings import Settings
 from beancount_ledger.infrastructure import git_io
@@ -48,19 +51,9 @@ _UNKNOWN_ACCOUNT = "Expenses:DK:7199:Unknown"
 
 
 def generate_bank(app_context: AppContext) -> int:
-    bank_file = BankFile.from_csv(app_context.bank_csv)
-    if not bank_file.transactions:
-        return 0
+    bank_file = app_context.bank_statements
+    audit = app_context.get_audit()
 
-    audit = AuditFile.from_yaml(firm_layout.audit_yaml(root))
-    rules = _load_keyword_rules(root)
-
-    # Indlæs kontoplan til LLM-fallback (BR-B02)
-    coa_path = firm_layout.chart_of_accounts_csv(root)
-    if coa_path.exists():
-        coa = ChartOfAccounts.from_csv(coa_path)
-    else:
-        coa = ChartOfAccounts.from_builtin()
     account_names = [a.beancount_account for a in coa.accounts]
 
     name_rules = _load_name_rules(root)

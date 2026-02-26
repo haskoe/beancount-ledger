@@ -11,6 +11,7 @@ import datetime
 from decimal import Decimal
 from pathlib import Path
 
+import pandas as pd
 from pydantic import BaseModel, Field
 
 from beancount_ledger.domain.settings import BankCsvFormat
@@ -65,4 +66,12 @@ class BankFile(BaseModel):
                         balance=Decimal(raw_balance),
                     )
                 )
+        return cls(transactions=rows)
+
+    @classmethod
+    def from_dataframe(
+        cls,
+        df: pd.DataFrame | None,
+    ) -> BankFile:
+        rows: list[BankTransaction] = [BankTransaction(date=row.date, description=row.description, amount = Decimal(row.amount), balance = Decimal(row.balance)) for row in df.itertuples(index=False)]
         return cls(transactions=rows)

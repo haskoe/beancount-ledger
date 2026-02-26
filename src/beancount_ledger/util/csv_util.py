@@ -40,6 +40,7 @@ def bank_csv_to_dataframe(input_file) -> pd.DataFrame | None:
         CsvColumnDetector(column_name=const.DESCRIPTION, detector_func=lambda col: detect_text_column(col, min_length=20)),
     ]
     result = csv_to_dataframe(input_file, detectors)
+    print(input_file)
     if result is not None:
         # nu skal vi checke:
         # 1: er amount og total er korrekte eller skal de byttes om
@@ -69,6 +70,7 @@ def bank_csv_to_dataframe(input_file) -> pd.DataFrame | None:
             else:
                 break
 
+    print('none')
     return None
 
 def csv_to_dataframe(input_file, detectors: list[CsvColumnDetector]) -> pd.DataFrame | None:

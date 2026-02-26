@@ -5,6 +5,7 @@ from functools import cached_property
 from pathlib import Path
 
 from beancount_ledger.domain.audit import AuditEntry, AuditFile
+from beancount_ledger.domain.bank import BankFile, BankTransaction
 from beancount_ledger.domain.current import CurrentState
 from beancount_ledger.domain.customers import Customer, CustomerRegister
 from beancount_ledger.domain.dividends import DividendPayment, DividendsFile
@@ -13,7 +14,7 @@ from beancount_ledger.domain.sales import Invoice, SalesFile
 from beancount_ledger.domain.services import ServiceCatalog
 from beancount_ledger.domain.settings import Settings
 from beancount_ledger.infrastructure import git_io
-from beancount_ledger.util import date_util, vat_util
+from beancount_ledger.util import csv_util, date_util, vat_util
 
 # ---------------------------------------------------------------------------
 # (skabelonfilnavn, destinationsfilnavn i data/<YYYY>/, render_year)
@@ -81,6 +82,10 @@ class AppContext:
         return self.data_dir / "bankcsv-download"
 
     @cached_property
+    def bank_csv_dir(self) -> Path:
+        return self.data_dir / "bankcsv-download"
+
+    @cached_property
     def receipts_dir(self) -> Path:
         """Returnér receipts/ mappen."""
         return self.root_path / "receipts"
@@ -142,6 +147,11 @@ class AppContext:
     @cached_property
     def dividends(self) -> DividendsFile:
         return DividendsFile.from_yaml(self.year_dir / "udbytte.yaml")
+
+    @cached_property
+    def bank_statements(self) -> BankFile:
+        df = csv_util.bank_csv_to_dataframe(self.year_dir / "bank.csv")
+        return BankFile.from_dataframe(df)
 
     @cached_property
     def audit_yaml(self) -> Path:
