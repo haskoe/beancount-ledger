@@ -9,6 +9,11 @@ from beancount_ledger.domain.current import CurrentState
 from beancount_ledger.util import date_util, vat_util
 from beancount_ledger.infrastructure import git_io
 
+from beancount_ledger.domain.audit import AuditEntry, AuditFile
+from beancount_ledger.domain.customers import Customer, CustomerRegister
+from beancount_ledger.domain.sales import Invoice, SalesFile
+from beancount_ledger.domain.services import ServiceCatalog
+
 # ---------------------------------------------------------------------------
 # (skabelonfilnavn, destinationsfilnavn i data/<YYYY>/, render_year)
 # ---------------------------------------------------------------------------
@@ -43,12 +48,16 @@ class AppContext:
     def data_dir(self) -> Path:
         return self.root_path / "data"
 
+    @cached_property
+    def get_invoice_path(self,account:str) -> Path:
+        return self.generated_dir / "invoices" / f"faktura-{account}-{self.current_state.next_invoice_number:0>4}.pdf"
+
     def get_year_dir(self, year: int) -> Path:
         return self.data_dir / str(year)
 
     @cached_property
     def year_dir(self) -> Path:
-        return self.get_data_dir(str(self.current_state.current_year))
+        return self.get_year_dir(str(self.current_state.current_year))
 
     @cached_property
     def generated_dir(self) -> Path:
@@ -93,10 +102,30 @@ class AppContext:
     @cached_property
     def primo_beancount(self) -> Path:
         return self.generated_dir / "primo.beancount"
+    
+    def sales_beancount(self) -> Path:
+        return self.generated_dir / f"salg{self.current_state.current_year}.beancount"
+    
 
     @cached_property
     def primo_date(self) -> datetime.date:
         return date_util.add_days(self.settings.start_date, -1)
+
+    @cached_property
+    def customers(self) -> CustomerRegister:
+        return CustomerRegister.from_yaml(self.root_path / "sales_accounts.yaml")
+
+    @cached_property
+    def catalog(self) -> ServiceCatalog:
+        return ServiceCatalog.from_yaml(self.root_path / "ydelser.yaml")
+
+    @cached_property
+    def sales(self) -> SalesFile:
+        return SalesFile.from_yaml(self.year_dir / "salg.yaml")
+
+    @cached_property
+    def audit(self) -> AuditFile:
+        return AuditFile.from_yaml(self.year_dir / "audit.yaml")
 
 def init_year(app_context: AppContext) -> bool:
     current_year = app_context.current_state.current_year

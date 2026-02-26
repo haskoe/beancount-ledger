@@ -17,6 +17,7 @@ class CurrentState(BaseModel):
 
     current_year: int | None = None
     current_vat_period: str | None = None
+    next_invoice_number: int = 1
 
     @field_validator("current_vat_period", mode="before")
     @classmethod

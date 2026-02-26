@@ -21,13 +21,10 @@ from __future__ import annotations
 from decimal import Decimal
 from pathlib import Path
 
+from beancount_ledger.application.app_context import AppContext
 from beancount_ledger.application.invoice_pdf import generate_invoice_pdf
 from beancount_ledger.domain.audit import AuditEntry, AuditFile
 from beancount_ledger.domain.beancount_types import BeancountPosting, BeancountTransaction
-from beancount_ledger.domain.customers import Customer, CustomerRegister
-from beancount_ledger.domain.sales import Invoice, SalesFile
-from beancount_ledger.domain.services import ServiceCatalog
-from beancount_ledger.domain.settings import Settings
 from beancount_ledger.infrastructure import git_io
 from beancount_ledger.infrastructure.beancount_writer import (
     write_transactions,
@@ -45,34 +42,15 @@ class SalesValidationError(Exception):
     """Fejl ved validering af salgsdata (BR-S01–S02)."""
 
 
-def generate_sales(root: Path, year: int) -> int:
-    """Generer salgsposteringer for *year*.
-
-    Args:
-        root: Firma-repoets rod.
-        year: Regnskabsåret der behandles.
-
-    Returns:
-        Antal nye posteringer tilføjet.
-
-    Raises:
-        SalesValidationError: BR-S01 eller BR-S02 overtrådt.
-    """
-    # --- Indlæs stamdata ---
-    settings = Settings.model_validate(load_yaml(firm_layout.settings_yaml(root)))
-    customers = CustomerRegister.from_yaml(firm_layout.sales_accounts_yaml(root))
-    catalog = ServiceCatalog.from_yaml(firm_layout.ydelser_yaml(root))
-    audit = AuditFile.from_yaml(firm_layout.audit_yaml(root))
-
-    sales_path = firm_layout.sales_yaml(root, year)
-    if not sales_path.exists():
-        return 0
-
-    sales = SalesFile.from_yaml(sales_path)
+def generate_sales(app_context: AppContext) -> int:
+    settings = app_context.settings
+    customers = app_context.customers
+    catalog = app_context.catalog
+    audit = app_context.audit
+    sales = app_context.sales
 
     # --- Behandl alle fakturaer → regenerer hel fil ---
-    out_path = firm_layout.sales_beancount(root, year)
-    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path = app_context.sales_beancount()
 
     transactions: list[BeancountTransaction] = []
     new_count = 0
@@ -103,9 +81,9 @@ def generate_sales(root: Path, year: int) -> int:
 
         # BR-S06: generer faktura-PDF og opret audit-entry kun for NYE fakturaer
         if existing is None:
-            pdf_path = firm_layout.invoice_pdf(root, invoice.invoice_number)
+            pdf_path = app_context.get_invoice_path("kunde1")
             generate_invoice_pdf(invoice, customer, catalog, settings, pdf_path)
-            relative_pdf = pdf_path.relative_to(root).as_posix()
+            relative_pdf = pdf_path.relative_to(app_context.root_path).as_posix()
             entry = AuditEntry(
                 transaction_id=invoice.transaction_id(),
                 status="draft",

@@ -72,9 +72,6 @@ def main():
         else:
             parser.error(f"--firma {args.firma} not found, candidates: {candidates}")
 
-    if not args.enddate:
-        parser.error("--enddate is required")
-
     ctx = LedgerContext(company_name=args.firma, enddate=args.enddate)
 
     if args.command == "afstem":
