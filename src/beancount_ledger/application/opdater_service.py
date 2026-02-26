@@ -36,7 +36,7 @@ def opdater(app_context: AppContext) -> dict[str, int]:
     # auto_import_bank_download(root, year)
 
     results["salg"] = generate_sales(app_context=app_context)
-    # results["loen"] = generate_salary(root, year)
+    results["loen"] = generate_salary(app_context=app_context)
     # results["udbytte"] = generate_dividends(root, year)
     # results["bank"] = generate_bank(root, year)
 

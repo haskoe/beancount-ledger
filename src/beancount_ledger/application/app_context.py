@@ -9,6 +9,7 @@ from beancount_ledger.domain.current import CurrentState
 from beancount_ledger.util import date_util, vat_util
 from beancount_ledger.infrastructure import git_io
 
+from beancount_ledger.domain.salary import SalaryFile, SalaryRun
 from beancount_ledger.domain.audit import AuditEntry, AuditFile
 from beancount_ledger.domain.customers import Customer, CustomerRegister
 from beancount_ledger.domain.sales import Invoice, SalesFile
@@ -111,7 +112,9 @@ class AppContext:
     
     def sales_beancount(self) -> Path:
         return self.generated_dir / f"salg{self.current_state.current_year}.beancount"
-    
+
+    def salary_beancount(self) -> Path:
+        return self.generated_dir / f"loen{self.current_state.current_year}.beancount"
 
     @cached_property
     def primo_date(self) -> datetime.date:
@@ -128,6 +131,10 @@ class AppContext:
     @cached_property
     def sales(self) -> SalesFile:
         return SalesFile.from_yaml(self.year_dir / "salg.yaml")
+
+    @cached_property
+    def salary(self) -> SalaryFile:
+        return SalaryFile.from_yaml(self.year_dir / "loen.yaml")
 
     @cached_property
     def audit_yaml(self) -> Path:

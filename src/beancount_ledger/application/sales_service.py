@@ -22,6 +22,7 @@ from decimal import Decimal
 from pathlib import Path
 
 from beancount_ledger.application.app_context import AppContext
+from beancount_ledger.domain.customers import Customer, CustomerRegister
 from beancount_ledger.domain.sales import Invoice, SalesFile
 from beancount_ledger.domain.services import ServiceCatalog
 from beancount_ledger.application.invoice_pdf import generate_invoice_pdf
