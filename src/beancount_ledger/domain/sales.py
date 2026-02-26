@@ -40,16 +40,11 @@ class InvoiceLine(BaseModel):
 class Invoice(BaseModel):
     """Én salgsfaktura fra salg.yaml."""
 
-    invoice_number: str = Field(..., min_length=1)
+    invoice_number: str = None
     invoice_date: datetime.date
     customer_id: str = Field(..., min_length=1)
     template: str = "default"
     lines: list[InvoiceLine] = Field(default_factory=list)
-
-    @field_validator("invoice_number", "customer_id", mode="before")
-    @classmethod
-    def _strip(cls, v: object) -> str:
-        return str(v).strip()
 
     @field_validator("invoice_date", mode="before")
     @classmethod
@@ -60,7 +55,7 @@ class Invoice(BaseModel):
 
     def transaction_id(self) -> str:
         """Returnér transaction ID (BR-S07)."""
-        return f"sales;{self.invoice_number}"
+        return f"sales;{self.invoice_date.isoformat()};{self.customer_id}"
 
 
 class SalesFile(BaseModel):
@@ -73,8 +68,3 @@ class SalesFile(BaseModel):
         """Indlæs salgsfil fra salg.yaml."""
         data = yaml.safe_load(path.read_text(encoding="utf-8"))
         return cls.model_validate(data or {})
-
-    def by_invoice_number(self, invoice_number: str) -> Invoice | None:
-        """Returner faktura med det givne fakturanummer, eller None."""
-        needle = invoice_number.strip()
-        return next((i for i in self.invoices if i.invoice_number == needle), None)

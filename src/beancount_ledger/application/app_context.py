@@ -40,17 +40,23 @@ class AppContext:
             self.current_state.current_year = self.settings.start_date.year
             self.current_state.current_vat_period = vat_util.get_vat_period_for_date(self.settings.start_date, self.settings.vat_period_length)
             self.current_state.to_yaml(self.current_yaml)  # Gem opdateret
-        
-        init_year(self)
+            init_year(self)
         
 
     @cached_property
     def data_dir(self) -> Path:
         return self.root_path / "data"
 
-    @cached_property
-    def get_invoice_path(self,account:str) -> Path:
-        return self.generated_dir / "invoices" / f"faktura-{account}-{self.current_state.next_invoice_number:0>4}.pdf"
+    def get_next_invoice_number(self) -> Path:
+        return f"{self.current_state.next_invoice_number:0>4}"    
+
+    def increment_next_invoice_number(self) -> Path:
+        self.current_state.next_invoice_number += 1
+        self.current_state.to_yaml(self.current_yaml)
+        return self.current_state.next_invoice_number
+
+    def get_invoice_path(self, invoice: Invoice) -> Path:
+        return self.generated_dir / "invoices" / f"faktura-{invoice.customer_id}-{invoice.invoice_number}.pdf"
 
     def get_year_dir(self, year: int) -> Path:
         return self.data_dir / str(year)
@@ -124,8 +130,15 @@ class AppContext:
         return SalesFile.from_yaml(self.year_dir / "salg.yaml")
 
     @cached_property
-    def audit(self) -> AuditFile:
-        return AuditFile.from_yaml(self.year_dir / "audit.yaml")
+    def audit_yaml(self) -> Path:
+        return self.year_dir / "audit.yaml"
+
+    def get_audit(self) -> AuditFile:
+        return AuditFile.from_yaml(self.audit_yaml)
+    
+    def commit_all(self, message: str) -> None:
+        """Commit alle ændringer i root repo med given commit-besked."""
+        git_io.commit_all(self.root_path, message)
 
 def init_year(app_context: AppContext) -> bool:
     current_year = app_context.current_state.current_year
@@ -142,5 +155,5 @@ def init_year(app_context: AppContext) -> bool:
                 content = content.replace("{" + key + "}", value)
         dest.write_text(content, encoding="utf-8")
 
-    git_io.commit_all(app_context.root_path, f"year {current_year} created")
+    app_context.commit_all(f"year {current_year} created")
     return True

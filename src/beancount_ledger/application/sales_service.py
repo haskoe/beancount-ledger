@@ -22,6 +22,8 @@ from decimal import Decimal
 from pathlib import Path
 
 from beancount_ledger.application.app_context import AppContext
+from beancount_ledger.domain.sales import Invoice, SalesFile
+from beancount_ledger.domain.services import ServiceCatalog
 from beancount_ledger.application.invoice_pdf import generate_invoice_pdf
 from beancount_ledger.domain.audit import AuditEntry, AuditFile
 from beancount_ledger.domain.beancount_types import BeancountPosting, BeancountTransaction
@@ -46,7 +48,7 @@ def generate_sales(app_context: AppContext) -> int:
     settings = app_context.settings
     customers = app_context.customers
     catalog = app_context.catalog
-    audit = app_context.audit
+    audit = app_context.get_audit()
     sales = app_context.sales
 
     # --- Behandl alle fakturaer → regenerer hel fil ---
@@ -60,7 +62,6 @@ def generate_sales(app_context: AppContext) -> int:
         customer = customers.by_id(invoice.customer_id)
         if customer is None:
             raise SalesValidationError(
-                f"Faktura {invoice.invoice_number}: "
                 f"ukendt customer_id={invoice.customer_id!r}"
             )
 
@@ -76,12 +77,13 @@ def generate_sales(app_context: AppContext) -> int:
         total_excl, vat, total_incl = _calculate_totals(invoice, catalog)
 
         # Bestem flag fra audit-status
+        invoice.invoice_number = app_context.get_next_invoice_number()
         existing = audit.by_transaction_id(invoice.transaction_id())
         flag = "*" if (existing and existing.status == "godkendt") else "!"
 
         # BR-S06: generer faktura-PDF og opret audit-entry kun for NYE fakturaer
         if existing is None:
-            pdf_path = app_context.get_invoice_path("kunde1")
+            pdf_path = app_context.get_invoice_path(invoice)
             generate_invoice_pdf(invoice, customer, catalog, settings, pdf_path)
             relative_pdf = pdf_path.relative_to(app_context.root_path).as_posix()
             entry = AuditEntry(
@@ -105,9 +107,9 @@ def generate_sales(app_context: AppContext) -> int:
     if not transactions:
         return 0
 
-    write_transactions(out_path, transactions, title=f"Salg {year}")
-    audit.to_yaml(firm_layout.audit_yaml(root))
-    git_io.commit_all(root, "sales updated")
+    write_transactions(out_path, transactions, title=f"Salg {app_context.current_state.current_year}")
+    audit.to_yaml(app_context.audit_yaml)
+    app_context.commit_all("sales updated")
     return new_count
 
 
