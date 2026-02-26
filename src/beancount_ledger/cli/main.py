@@ -30,8 +30,18 @@ class GlobalContext:
         være forældremappe og roden er ``base_dir / cvr``.  Ellers bruges
         ``base_dir`` direkte (bruger er allerede inde i firma-repoet).
         """
-        effective_cvr = cvr or self.cvr
-        return self.base_dir / effective_cvr if effective_cvr else self.base_dir
+        if (self.base_dir / "settings.yaml").exists():
+            return self.base_dir
+
+        if not self.cvr:
+            candidate_dir = self.base_dir / "firma"
+            if candidate_dir.is_dir():
+                candidates = list(candidate_dir.iterdir())
+                if (len(candidates) == 1 and candidates[0].is_dir()):
+                    print(candidates[0])
+                    return candidates[0]
+            
+        return self.base_dir / "firma" / self.cvr
 
 
 pass_global = click.make_pass_decorator(GlobalContext)
