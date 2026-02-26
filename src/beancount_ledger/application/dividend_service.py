@@ -18,6 +18,7 @@ from __future__ import annotations
 from decimal import Decimal
 from pathlib import Path
 
+from beancount_ledger.application.app_context import AppContext
 from beancount_ledger.domain.audit import AuditEntry, AuditFile
 from beancount_ledger.domain.beancount_types import BeancountPosting, BeancountTransaction
 from beancount_ledger.domain.dividends import DividendPayment, DividendsFile
@@ -27,16 +28,7 @@ from beancount_ledger.infrastructure.beancount_writer import (
 )
 
 
-def generate_dividends(root: Path, year: int) -> int:
-    """Generer udbytteposteringer for *year*.
-
-    Args:
-        root: Firma-repoets rod.
-        year: Regnskabsåret der behandles.
-
-    Returns:
-        Antal nye posteringer tilføjet.
-    """
+def generate_dividends(app_context: AppContext) -> int:
     audit = AuditFile.from_yaml(firm_layout.audit_yaml(root))
 
     dividends_path = firm_layout.dividends_yaml(root, year)

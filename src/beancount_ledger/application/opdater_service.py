@@ -23,8 +23,6 @@ from beancount_ledger.application.sales_service import generate_sales
 
 
 def opdater(app_context: AppContext) -> dict[str, int]:
-    root = app_context.root_path
-    year = app_context.current_state.current_year
     results: dict[str, int] = {
         "salg": 0,
         "loen": 0,
@@ -37,7 +35,7 @@ def opdater(app_context: AppContext) -> dict[str, int]:
 
     results["salg"] = generate_sales(app_context=app_context)
     results["loen"] = generate_salary(app_context=app_context)
-    # results["udbytte"] = generate_dividends(root, year)
+    results["udbytte"] = generate_dividends(app_context=app_context)
     # results["bank"] = generate_bank(root, year)
 
     return results
