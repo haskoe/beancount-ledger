@@ -63,7 +63,7 @@ def generate_dividends(app_context: AppContext) -> int:
     if not transactions:
         return 0
 
-    write_transactions(out_path, transactions, title=f"Løn {app_context.current_state.current_year}")
+    write_transactions(out_path, transactions, title=f"Udbytte {app_context.current_state.current_year}")
     audit.to_yaml(app_context.audit_yaml)
     # git_io.commit_all(app_context.root_path, "salary updated")
     return new_count
@@ -73,6 +73,7 @@ def generate_dividends(app_context: AppContext) -> int:
 # Interne hjælpefunktioner
 # ---------------------------------------------------------------------------
 
+MINUS1 = Decimal("-1.00")  # BR-U02
 
 def _build_transaction(payment: DividendPayment, flag: str = "!") -> BeancountTransaction:
     """Byg beancount-postering for én udbytteudbetaling (BR-U02/U03).
@@ -96,7 +97,7 @@ def _build_transaction(payment: DividendPayment, flag: str = "!") -> BeancountTr
             ),
             BeancountPosting(
                 account="Liabilities:WithholdingTaxPayable",
-                amount=-payment.withholding_tax,
+                amount=MINUS1 * payment.withholding_tax,
                 comment="kildeskat 27%",
             ),
         ],

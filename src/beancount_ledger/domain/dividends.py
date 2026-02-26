@@ -11,10 +11,11 @@ from decimal import ROUND_HALF_UP, Decimal
 from pathlib import Path
 
 import yaml
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, computed_field, field_validator, model_validator
 
 _CENT = Decimal("0.01")
 
+STANDARD_NET_RATE = Decimal("0.73")  # BR-U02
 STANDARD_WITHHOLDING_RATE = Decimal("0.27")  # BR-U02
 
 
@@ -25,8 +26,18 @@ class DividendPayment(BaseModel):
     recipient_id: str = Field(..., min_length=1)
     name: str = Field(..., min_length=1)
     gross_amount: Decimal = Field(..., ge=Decimal("0"))
-    withholding_tax: Decimal = Field(..., ge=Decimal("0"))
-    net_amount: Decimal = Field(..., ge=Decimal("0"))
+
+    @computed_field
+    @property
+    def net_amount(self) -> Decimal:
+        result = self.gross_amount * STANDARD_NET_RATE
+        return result.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+    @computed_field
+    @property
+    def withholding_tax(self) -> Decimal:
+        result = self.gross_amount * STANDARD_WITHHOLDING_RATE
+        return result.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
     @field_validator("run_date", mode="before")
     @classmethod
@@ -39,19 +50,6 @@ class DividendPayment(BaseModel):
     @classmethod
     def _strip(cls, v: object) -> str:
         return str(v).strip()
-
-    @model_validator(mode="after")
-    def _check_net_amount(self) -> DividendPayment:
-        """BR-U01: gross_amount − withholding_tax == net_amount (afrundet til øre)."""
-        expected = (self.gross_amount - self.withholding_tax).quantize(_CENT, ROUND_HALF_UP)
-        actual = self.net_amount.quantize(_CENT, ROUND_HALF_UP)
-        if expected != actual:
-            raise ValueError(
-                f"net_amount {actual} stemmer ikke: "
-                f"gross_amount({self.gross_amount}) − "
-                f"withholding_tax({self.withholding_tax}) = {expected}"
-            )
-        return self
 
     def transaction_id(self) -> str:
         """Returnér transaction ID (BR-U03)."""

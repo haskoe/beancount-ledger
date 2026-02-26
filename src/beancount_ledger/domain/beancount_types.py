@@ -33,7 +33,6 @@ class BeancountPosting(BaseModel):
             line += f"  ; {self.comment}"
         return line
 
-
 class BeancountTransaction(BaseModel):
     """En komplet beancount-postering med én eller flere kreditlinjer."""
 
