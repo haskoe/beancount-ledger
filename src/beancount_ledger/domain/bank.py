@@ -7,7 +7,6 @@ Kolonnenavne og datoformat konfigureres i Settings.bank_csv_format.
 from __future__ import annotations
 
 import csv
-from curses import raw
 import datetime
 from decimal import Decimal
 from pathlib import Path

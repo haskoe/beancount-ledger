@@ -1,19 +1,19 @@
-from dataclasses import dataclass
-from pathlib import Path
-from functools import cached_property
-from datetime import datetime
 import importlib.resources
+from dataclasses import dataclass
+from datetime import datetime
+from functools import cached_property
+from pathlib import Path
 
-from beancount_ledger.domain.settings import Settings
-from beancount_ledger.domain.current import CurrentState
-from beancount_ledger.util import date_util, vat_util
-from beancount_ledger.infrastructure import git_io
-
-from beancount_ledger.domain.salary import SalaryFile, SalaryRun
 from beancount_ledger.domain.audit import AuditEntry, AuditFile
+from beancount_ledger.domain.current import CurrentState
 from beancount_ledger.domain.customers import Customer, CustomerRegister
+from beancount_ledger.domain.dividends import DividendPayment, DividendsFile
+from beancount_ledger.domain.salary import SalaryFile, SalaryRun
 from beancount_ledger.domain.sales import Invoice, SalesFile
 from beancount_ledger.domain.services import ServiceCatalog
+from beancount_ledger.domain.settings import Settings
+from beancount_ledger.infrastructure import git_io
+from beancount_ledger.util import date_util, vat_util
 
 # ---------------------------------------------------------------------------
 # (skabelonfilnavn, destinationsfilnavn i data/<YYYY>/, render_year)
@@ -42,14 +42,14 @@ class AppContext:
             self.current_state.current_vat_period = vat_util.get_vat_period_for_date(self.settings.start_date, self.settings.vat_period_length)
             self.current_state.to_yaml(self.current_yaml)  # Gem opdateret
             init_year(self)
-        
+
 
     @cached_property
     def data_dir(self) -> Path:
         return self.root_path / "data"
 
     def get_next_invoice_number(self) -> Path:
-        return f"{self.current_state.next_invoice_number:0>4}"    
+        return f"{self.current_state.next_invoice_number:0>4}"
 
     def increment_next_invoice_number(self) -> Path:
         self.current_state.next_invoice_number += 1
@@ -109,12 +109,15 @@ class AppContext:
     @cached_property
     def primo_beancount(self) -> Path:
         return self.generated_dir / "primo.beancount"
-    
+
     def sales_beancount(self) -> Path:
         return self.generated_dir / f"salg{self.current_state.current_year}.beancount"
 
     def salary_beancount(self) -> Path:
         return self.generated_dir / f"loen{self.current_state.current_year}.beancount"
+
+    def dividends_beancount(self) -> Path:
+        return self.generated_dir / f"udbytte{self.current_state.current_year}.beancount"
 
     @cached_property
     def primo_date(self) -> datetime.date:
@@ -137,12 +140,16 @@ class AppContext:
         return SalaryFile.from_yaml(self.year_dir / "loen.yaml")
 
     @cached_property
+    def dividends(self) -> DividendsFile:
+        return DividendsFile.from_yaml(self.year_dir / "udbytte.yaml")
+
+    @cached_property
     def audit_yaml(self) -> Path:
         return self.year_dir / "audit.yaml"
 
     def get_audit(self) -> AuditFile:
         return AuditFile.from_yaml(self.audit_yaml)
-    
+
     def commit_all(self, message: str) -> None:
         """Commit alle ændringer i root repo med given commit-besked."""
         git_io.commit_all(self.root_path, message)

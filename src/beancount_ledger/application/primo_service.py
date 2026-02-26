@@ -55,7 +55,7 @@ def generate_primo(app_context: AppContext) -> int:
     ensure_beancount_header(out_path, "Primobalance")
     append_transactions(out_path, transactions)
 
-    git_io.commit_all(app_context.root_path, "primo updated")
+    # git_io.commit_all(app_context.root_path, "primo updated")
     return len(transactions)
 
 

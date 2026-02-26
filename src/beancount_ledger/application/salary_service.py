@@ -20,7 +20,10 @@ from pathlib import Path
 
 from beancount_ledger.application.app_context import AppContext
 from beancount_ledger.domain.audit import AuditEntry, AuditFile
-from beancount_ledger.domain.beancount_types import BeancountPosting, BeancountTransaction
+from beancount_ledger.domain.beancount_types import (
+    BeancountPosting,
+    BeancountTransaction,
+)
 from beancount_ledger.domain.salary import SalaryFile, SalaryRun
 from beancount_ledger.infrastructure import git_io
 from beancount_ledger.infrastructure.beancount_writer import (
@@ -63,7 +66,7 @@ def generate_salary(app_context: AppContext) -> int:
 
     write_transactions(out_path, transactions, title=f"Løn {app_context.current_state.current_year}")
     audit.to_yaml(app_context.audit_yaml)
-    git_io.commit_all(app_context.root_path, "salary updated")
+    # git_io.commit_all(app_context.root_path, "salary updated")
     return new_count
 
 

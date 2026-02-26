@@ -120,7 +120,7 @@ def generate_bank(app_context: AppContext) -> int:
 
     write_transactions(out_path, transactions, title=f"Bank {year}")
     audit.to_yaml(firm_layout.audit_yaml(root))
-    git_io.commit_all(root, f"bank updated {year}")
+    # git_io.commit_all(root, f"bank updated {year}")
     return new_count
 
 

@@ -20,7 +20,10 @@ from pathlib import Path
 
 from beancount_ledger.application.app_context import AppContext
 from beancount_ledger.domain.audit import AuditEntry, AuditFile
-from beancount_ledger.domain.beancount_types import BeancountPosting, BeancountTransaction
+from beancount_ledger.domain.beancount_types import (
+    BeancountPosting,
+    BeancountTransaction,
+)
 from beancount_ledger.domain.dividends import DividendPayment, DividendsFile
 from beancount_ledger.infrastructure import git_io
 from beancount_ledger.infrastructure.beancount_writer import (
@@ -29,20 +32,14 @@ from beancount_ledger.infrastructure.beancount_writer import (
 
 
 def generate_dividends(app_context: AppContext) -> int:
-    audit = AuditFile.from_yaml(firm_layout.audit_yaml(root))
+    audit = app_context.get_audit()
+    dividends = app_context.dividends
 
-    dividends_path = firm_layout.dividends_yaml(root, year)
-    if not dividends_path.exists():
-        return 0
-
-    dividends_file = DividendsFile.from_yaml(dividends_path)
-
-    # --- Behandl alle udbetalinger → regenerer hel fil ---
-    out_path = firm_layout.dividends_beancount(root, year)
+    out_path = app_context.dividends_beancount()
     transactions: list[BeancountTransaction] = []
     new_count = 0
 
-    for payment in dividends_file.payments:
+    for payment in dividends.payments:
         existing = audit.by_transaction_id(payment.transaction_id())
         flag = "*" if (existing and existing.status == "godkendt") else "!"
         txn = _build_transaction(payment, flag=flag)
@@ -66,9 +63,9 @@ def generate_dividends(app_context: AppContext) -> int:
     if not transactions:
         return 0
 
-    write_transactions(out_path, transactions, title=f"Udbytte {year}")
-    audit.to_yaml(firm_layout.audit_yaml(root))
-    git_io.commit_all(root, "dividends updated")
+    write_transactions(out_path, transactions, title=f"Løn {app_context.current_state.current_year}")
+    audit.to_yaml(app_context.audit_yaml)
+    # git_io.commit_all(app_context.root_path, "salary updated")
     return new_count
 
 
