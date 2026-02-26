@@ -5,13 +5,14 @@ Bruges af sales_service.generate_sales.
 
 from __future__ import annotations
 
+import asyncio
 import datetime
 import importlib.resources
 from decimal import Decimal
 from pathlib import Path
 
-import weasyprint
 from jinja2 import Environment, FunctionLoader
+from playwright.async_api import async_playwright
 
 from beancount_ledger.domain.customers import Customer
 from beancount_ledger.domain.sales import Invoice
@@ -149,5 +150,18 @@ def generate_invoice_pdf(
     )
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    weasyprint.HTML(string=html_str).write_pdf(str(out_path))
+
+    # Generate PDF using Playwright
+    asyncio.run(_generate_pdf_async(html_str, str(out_path)))
+
     return out_path
+
+
+async def _generate_pdf_async(html_content: str, output_path: str) -> None:
+    """Generate PDF from HTML using Playwright."""
+    async with async_playwright() as p:
+        browser = await p.chromium.launch()
+        page = await browser.new_page()
+        await page.set_content(html_content)
+        await page.pdf(path=output_path, format="A4", print_background=True)
+        await browser.close()

@@ -124,7 +124,7 @@ Systemet installeres og køres via `uv` pakkehåndtering. Brug IKKE `uvx`.
 
 Workflow:
 1. Opret miljø: `uv init` (hvis nyt)
-2. Installér pakker: `uv add beancount fava beangulp jinja2 weasyprint`
+2. Installér pakker: `uv add beancount fava beangulp jinja2 playwright`
 3. Kørsel: `uv run fava regnskab.beancount`
 
 INSTRUKS TIL AI: Når du bliver bedt om at ændre eller tilføje funktioner, skal du sikre dig, at de overholder ovenstående struktur, bruger decimal modulet til præcis økonomisk beregning, og er kompatible med uv pakkehåndtering (ingen uvx).
