@@ -6,9 +6,11 @@ from pathlib import Path
 
 from beancount_ledger.domain.audit import AuditEntry, AuditFile
 from beancount_ledger.domain.bank import BankFile, BankTransaction
+from beancount_ledger.domain.chart_of_accounts import ChartOfAccounts
 from beancount_ledger.domain.current import CurrentState
 from beancount_ledger.domain.customers import Customer, CustomerRegister
 from beancount_ledger.domain.dividends import DividendPayment, DividendsFile
+from beancount_ledger.domain.name_to_account import NameToAccount
 from beancount_ledger.domain.salary import SalaryFile, SalaryRun
 from beancount_ledger.domain.sales import Invoice, SalesFile
 from beancount_ledger.domain.services import ServiceCatalog
@@ -49,13 +51,23 @@ class AppContext:
     def data_dir(self) -> Path:
         return self.root_path / "data"
 
-    def get_next_invoice_number(self) -> Path:
+    @cached_property
+    def chart_of_accounts(self):
+        return ChartOfAccounts.from_csv(self.root_path / "standardkontoplan.csv")
+
+    @cached_property
+    def name_to_account(self):
+        return NameToAccount.from_csv(self.root_path / "navntilkonto.csv")
+
+    def get_next_invoice_number(self) -> str:
         return f"{self.current_state.next_invoice_number:0>4}"
 
-    def increment_next_invoice_number(self) -> Path:
-        self.current_state.next_invoice_number += 1
+    def _update_current_state(self) -> None:
         self.current_state.to_yaml(self.current_yaml)
-        return self.current_state.next_invoice_number
+
+    def increment_next_invoice_number(self) -> None:
+        self.current_state.next_invoice_number += 1
+        self._update_current_state()
 
     def get_invoice_path(self, invoice: Invoice) -> Path:
         return self.generated_dir / "invoices" / f"faktura-{invoice.customer_id}-{invoice.invoice_number}.pdf"

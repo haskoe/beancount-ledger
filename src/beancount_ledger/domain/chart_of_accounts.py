@@ -90,6 +90,9 @@ class ChartOfAccounts(BaseModel):
     # ------------------------------------------------------------------
     # Opslag
     # ------------------------------------------------------------------
+    def get_matching_accounts(self, account_name):
+        _account_name = account_name.lower()
+        return [a for a in self.accounts if _account_name in a.beancount_account]
 
     def by_id(self, account_id: str) -> Account | None:
         """Returner konto med det givne kontonummer, eller None."""

@@ -40,8 +40,7 @@ def bank_csv_to_dataframe(input_file) -> pd.DataFrame | None:
         CsvColumnDetector(column_name=const.DESCRIPTION, detector_func=lambda col: detect_text_column(col, min_length=20)),
     ]
     result = csv_to_dataframe(input_file, detectors)
-    print(input_file)
-    if result is not None:
+    if not result.empty:
         # nu skal vi checke:
         # 1: er amount og total er korrekte eller skal de byttes om
         # 2: er rækker sorteret korrekt: asc efter dato
@@ -62,16 +61,14 @@ def bank_csv_to_dataframe(input_file) -> pd.DataFrame | None:
                         result = result[[const.DATE, const.TOTAL, const.AMOUNT, const.DESCRIPTION]]
                     return result
 
-            # hvis vi er her kan det kun være fordi der er fejl i bank csv filen
-            # eller der IKKE er forskellige datoer i csv filen
+            # hvis vi er her kan det kun være fordi 1) der er fejl i bank csv filen
+            # eller 2) der kun er en dag csv filen
             if i<1 and col_date.iloc[0] == col_date.iloc[-1]:
                 result = result.iloc[::-1] # vendes om
-                print(result)
             else:
                 break
 
-    print('none')
-    return None
+    return result
 
 def csv_to_dataframe(input_file, detectors: list[CsvColumnDetector]) -> pd.DataFrame | None:
     df = pd.read_csv(input_file, header=None, dtype=str, sep=";", engine='python')
@@ -92,7 +89,8 @@ def csv_to_dataframe(input_file, detectors: list[CsvColumnDetector]) -> pd.DataF
                 break
 
     if len(detected) < len(detectors):
-        return None  # Eller håndter det på en anden måde, f.eks. ved at kaste en fejl
+        # vi returnerer en dataframe med 0 rækker
+        return pd.DataFrame(dict([(d.column_name,[]) for d in detectors]))  # Eller håndter det på en anden måde, f.eks. ved at kaste en fejl
 
     output_df = pd.DataFrame()
     for idx, detector in enumerate(detectors):

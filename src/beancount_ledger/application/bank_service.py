@@ -53,51 +53,41 @@ _UNKNOWN_ACCOUNT = "Expenses:DK:7199:Unknown"
 def generate_bank(app_context: AppContext) -> int:
     bank_file = app_context.bank_statements
     audit = app_context.get_audit()
-
-    account_names = [a.beancount_account for a in coa.accounts]
-
-    name_rules = _load_name_rules(root)
-
-    out_path = firm_layout.bank_beancount(root, year)
-    out_path.parent.mkdir(parents=True, exist_ok=True)
+    chart_of_accounts = app_context.chart_of_accounts
+    name_to_account = app_context.name_to_account
 
     transactions: list[BeancountTransaction] = []
     new_count = 0
-
+    non_matching = []
     for txn in bank_file.transactions:
+        # er den allerede i audit springer vi over uanset om den er draft eller approved
         existing = audit.by_transaction_id(txn.transaction_id())
-
         if existing is not None and existing.status == "approved":
-            # Godkendt af bruger – respektér gemt konto, brug ikke klassificering
-            contra_account = existing.account
-            flag = "*"
-        elif existing is not None:
-            # Draft: re-kør navntilkonto for at fange ny/rettet mapping.
-            # Falder tilbage på gemt konto hvis ingen match.
-            contra_account = (
-                _classify_by_name(txn.description, name_rules, coa)
-                or existing.account
-            )
-            flag = "!"
-            if contra_account != existing.account:
-                existing.account = contra_account
-        else:
-            # Ny transaktion: klassificér modkonto
-            contra_account = (
-                _classify_by_name(txn.description, name_rules, coa)
-                or _classify(txn.description, rules)
-            )
-            if contra_account == _UNKNOWN_ACCOUNT and settings.llm_model:
-                contra_account = _llm_fallback(
-                    txn, account_names, settings.llm_model
-                ) or _UNKNOWN_ACCOUNT
+            continue
+
+        # todo: match på ikke betalte salgsposteringer
+        # .....
+
+        # find en matchende konto ud fra beskrivelse
+        matching_accounts = name_to_account.get_matching_accounts(txn.description)
+        # kun hvis der er netop en matchende konto kan vi fortsætte
+        if len(matching_accounts) != 1:
+            non_matching.append(f"Mangler konto til beskrivelse: {txn.description}")
+            continue
+
+        # så skal vi lige sikre os at matching_accounts findes i chart of accounts
+        matching_account = matching_accounts[0]
+        matching_chart_of_accounts = chart_of_accounts.get_matching_accounts(matching_account)
+        if len(matching_chart_of_accounts) != 1:
+            non_matching.append(f"Lookup konto matcher 0 eller flere i chart of accounts : {matching_account}")
+
             flag = "!"
             audit.entries.append(
                 AuditEntry(
                     transaction_id=txn.transaction_id(),
                     status="draft",
                     type="bank",
-                    account=contra_account,
+                    account=matching_chart_of_accounts[0],
                     date=txn.date,
                     total_amount=abs(txn.amount),
                     vat_amount=Decimal("0"),
@@ -106,7 +96,7 @@ def generate_bank(app_context: AppContext) -> int:
             )
             new_count += 1
 
-        transactions.append(_build_transaction(txn, contra_account, flag=flag))
+        transactions.append(_build_transaction(txn, matching_chart_of_accounts[0], flag=flag))
 
     if not transactions:
         return 0
