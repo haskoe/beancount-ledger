@@ -52,7 +52,7 @@ _UNKNOWN_ACCOUNT = "Expenses:DK:7199:Unknown"
 
 def generate_bank(app_context: AppContext) -> int:
     bank_file = app_context.bank_statements
-    audit = app_context.get_audit()
+    audit = app_context.audit
     chart_of_accounts = app_context.chart_of_accounts
     name_to_account = app_context.name_to_account
 
@@ -96,14 +96,8 @@ def generate_bank(app_context: AppContext) -> int:
             )
             new_count += 1
 
-        transactions.append(_build_transaction(txn, matching_chart_of_accounts[0], flag=flag))
+        app_context.add_transaction.append(_build_transaction(txn, matching_chart_of_accounts[0], flag=flag))
 
-    if not transactions:
-        return 0
-
-    write_transactions(out_path, transactions, title=f"Bank {year}")
-    audit.to_yaml(firm_layout.audit_yaml(root))
-    # git_io.commit_all(root, f"bank updated {year}")
     return new_count
 
 

@@ -21,12 +21,8 @@ class AuditEntry(BaseModel):
     """Én audit-post — én postering med status og metadata."""
 
     transaction_id: str = Field(..., min_length=1)
-    status: AuditStatus
-    type: str = Field(..., min_length=1)
     account: str = Field(..., min_length=1)
     date: datetime.date
-    total_amount: Decimal
-    vat_amount: Decimal = Decimal("0")
     vat_free_amount: Decimal = Decimal("0")
     receipt: str = ""
     notes: str = ""
@@ -38,7 +34,7 @@ class AuditEntry(BaseModel):
             return v
         return datetime.date.fromisoformat(str(v).strip())
 
-    @field_validator("transaction_id", "type", "account", mode="before")
+    @field_validator("transaction_id", "account", mode="before")
     @classmethod
     def _strip(cls, v: object) -> str:
         return str(v).strip()

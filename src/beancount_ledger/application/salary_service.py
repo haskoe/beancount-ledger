@@ -18,6 +18,7 @@ from __future__ import annotations
 from decimal import Decimal
 from pathlib import Path
 
+from beancount_ledger.transaction import TransactionType
 from beancount_ledger.application.app_context import AppContext
 from beancount_ledger.domain.audit import AuditEntry, AuditFile
 from beancount_ledger.domain.beancount_types import (
@@ -33,42 +34,31 @@ from beancount_ledger.infrastructure.yaml_io import load_yaml
 
 
 def generate_salary(app_context: AppContext) -> int:
-    audit = app_context.get_audit()
+    audit = app_context.audit
     salary = app_context.salary
 
-    out_path = app_context.salary_beancount()
-    transactions: list[BeancountTransaction] = []
-    new_count = 0
-
     for run in salary.runs:
-        existing = audit.by_transaction_id(run.transaction_id())
-        flag = "*" if (existing and existing.status == "godkendt") else "!"
+        if not app_context.is_new(run.transaction_id()):
+            continue
+
+        flag = "!"
         txn = _build_transaction(run, flag=flag)
-        transactions.append(txn)
+        app_context.add_transaction(TransactionType.SALARY, txn)
 
-        if existing is None:
-            entry = AuditEntry(
-                transaction_id=run.transaction_id(),
-                status="draft",
-                type="salary",
-                account="Liabilities:SalaryPayable",
-                date=run.run_date,
-                total_amount=run.gross_salary,
-                vat_amount=Decimal("0"),
-                vat_free_amount=Decimal("0"),
-                receipt="",
-            )
-            audit.add(entry)
-            new_count += 1
-
-    if not transactions:
-        return 0
-
-    write_transactions(out_path, transactions, title=f"Løn {app_context.current_state.current_year}")
-    audit.to_yaml(app_context.audit_yaml)
-    # git_io.commit_all(app_context.root_path, "salary updated")
-    return new_count
-
+        entry = AuditEntry(
+            transaction_id=run.transaction_id(),
+            status="draft",
+            type="salary",
+            account="Liabilities:SalaryPayable",
+            date=run.run_date,
+            total_amount=run.gross_salary,
+            vat_amount=Decimal("0"),
+            vat_free_amount=Decimal("0"),
+            receipt="",
+        )
+        audit.add(entry)
+        
+    return
 
 # ---------------------------------------------------------------------------
 # Interne hjælpefunktioner

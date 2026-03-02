@@ -5,6 +5,13 @@ from . import constants as const
 from . import util
 from decimal import Decimal
 
+from enum import Enum
+class TransactionType(Enum):
+    SALE = 1
+    SALAY = 2
+    DIVIDEND = 3
+    BANK = 4
+
 
 @dataclass
 class Transaction:

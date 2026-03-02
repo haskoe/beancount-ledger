@@ -22,20 +22,19 @@ from beancount_ledger.application.salary_service import generate_salary
 from beancount_ledger.application.sales_service import generate_sales
 
 
-def opdater(app_context: AppContext) -> dict[str, int]:
-    results: dict[str, int] = {
-        "salg": 0,
-        "loen": 0,
-        "udbytte": 0,
-        "bank": 0,
-    }
-
+def _opdater(app_context: AppContext) -> None:
     # Transformér evt. download-CSV til bank.csv inden videre behandling
     # auto_import_bank_download(root, year)
 
-    results["salg"] = generate_sales(app_context=app_context)
-    results["loen"] = generate_salary(app_context=app_context)
-    results["udbytte"] = generate_dividends(app_context=app_context)
-    results["bank"] = generate_bank(app_context=app_context)
+    generate_sales(app_context=app_context)
+    generate_salary(app_context=app_context)
+    generate_dividends(app_context=app_context)
+    generate_bank(app_context=app_context)
 
-    return results
+def opdater(app_context: AppContext) -> dict[str, int]:
+    _opdater(app_context=app_context)
+    return app_context.update_finished()
+
+def approve(app_context: AppContext) -> None:
+    _opdater(app_context=app_context)
+    app_context.approve()

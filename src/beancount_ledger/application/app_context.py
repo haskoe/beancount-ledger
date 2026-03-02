@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from functools import cached_property
 from pathlib import Path
+from turtle import title
 
 from beancount_ledger.domain.audit import AuditEntry, AuditFile
 from beancount_ledger.domain.bank import BankFile, BankTransaction
@@ -16,8 +17,17 @@ from beancount_ledger.domain.sales import Invoice, SalesFile
 from beancount_ledger.domain.services import ServiceCatalog
 from beancount_ledger.domain.settings import Settings
 from beancount_ledger.infrastructure import git_io
-from beancount_ledger.util import csv_util, date_util, vat_util
+from beancount_ledger.transaction import TransactionType
+from beancount_ledger.util import csv_util, date_util, vat_util, file_util
+from beancount_ledger.domain.beancount_types import (
+    BeancountPosting,
+    BeancountTransaction,
+)
+from beancount_ledger.infrastructure.beancount_writer import (
+    write_transactions,
+)
 
+    
 # ---------------------------------------------------------------------------
 # (skabelonfilnavn, destinationsfilnavn i data/<YYYY>/, render_year)
 # ---------------------------------------------------------------------------
@@ -28,6 +38,13 @@ _YEAR_TEMPLATES: list[tuple[str, str, bool]] = [
     ("bank.csv", "bank.csv", False),
 ]
 
+beancount_prefixes : dict[TransactionType, str] = {
+    TransactionType.SALES: "salg",
+    TransactionType.SALARY: "loen",
+    TransactionType.DIVIDENDS: "udbytte",
+    TransactionType.BANK: "",
+}
+
 @dataclass
 class AppContext:
     """Indkapsler Settings og CurrentState med utility funktioner"""
@@ -37,6 +54,9 @@ class AppContext:
     current_state: CurrentState
 
     def __post_init__(self):
+        self.error_msgs = {}
+        self.transactions = {}
+
         if not self.settings or not self.settings.start_date:
             return
 
@@ -47,6 +67,57 @@ class AppContext:
             init_year(self)
 
 
+    def is_new(self, transaction_id: str) -> bool:
+        if transaction_id in  self.approved_transactions:
+            return False
+        
+        if self.audit.by_transaction_id(transaction_id) is not None:
+            return False
+        
+        return True
+
+    def add_error(self, transaction_type: TransactionType, error_msg: str):
+        self.error_msgs.setdefault(transaction_type, []).append(error_msg)
+
+    def add_transaction(self, transaction_type: TransactionType,  transaction: BeancountTransaction):
+        self.transactions.setdefault(transaction_type, []).append(transaction)
+
+    def update_finished(self):
+        if self.error_msgs:
+            for transaction_type, msgs in self.error_msgs.items():
+                print(f"Fejl i {transaction_type.name}:")
+                for msg in msgs:
+                    print(f"  - {msg}")
+            return
+
+        if not self.transactions:
+            print("Ingen nye posteringer at skrive.")
+            return
+                    
+        for transaction_type, transactions in self.transactions.items():
+            if transactions:
+                out_path = getattr(self, f"{transaction_type.name.lower()}_beancount")()
+                write_transactions(out_path, transactions, title=f"{transaction_type.name.capitalize()} {self.current_state.current_year}")
+        self.audit.to_yaml()
+        
+        return {transaction_type.name.lower(): len(transactions) for transaction_type, transactions in self.transactions.items()}
+
+    def approve(self) -> None:
+        if self.error_msgs:
+            for transaction_type, msgs in self.error_msgs.items():
+                print(f"Fejl i {transaction_type.name}:")
+                for msg in msgs:
+                    print(f"  - {msg}")
+            return
+
+        if self.transactions:
+            print("Der er nye posteringer siden sidste opdater kørsel.")
+            return
+        
+        
+        self.audit.to_yaml()
+
+        
     @cached_property
     def data_dir(self) -> Path:
         return self.root_path / "data"
@@ -166,11 +237,12 @@ class AppContext:
         return BankFile.from_dataframe(df)
 
     @cached_property
-    def audit_yaml(self) -> Path:
-        return self.year_dir / "audit.yaml"
+    def approved_transactions(self) -> set[str]:
+        return file_util.set_from_file(self.year_dir / "approved_transactions.txt", create_if_missing=True)
 
-    def get_audit(self) -> AuditFile:
-        return AuditFile.from_yaml(self.audit_yaml)
+    @cached_property
+    def audit(self) -> AuditFile:
+        return AuditFile.from_yaml(self.year_dir / "audit.yaml")
 
     def commit_all(self, message: str) -> None:
         """Commit alle ændringer i root repo med given commit-besked."""

@@ -21,6 +21,7 @@ from __future__ import annotations
 from decimal import Decimal
 from pathlib import Path
 
+from beancount_ledger.transaction import TransactionType
 from beancount_ledger.application.app_context import AppContext
 from beancount_ledger.domain.customers import Customer, CustomerRegister
 from beancount_ledger.domain.sales import Invoice, SalesFile
@@ -33,6 +34,7 @@ from beancount_ledger.infrastructure.beancount_writer import (
     write_transactions,
 )
 from beancount_ledger.infrastructure.yaml_io import load_yaml
+from beancount_ledger.transaction import TransactionType
 
 VAT_RATE = Decimal("0.25")
 
@@ -45,23 +47,24 @@ class SalesValidationError(Exception):
     """Fejl ved validering af salgsdata (BR-S01–S02)."""
 
 
-def generate_sales(app_context: AppContext) -> int:
+def generate_sales(app_context: AppContext) -> None:
     settings = app_context.settings
     customers = app_context.customers
     catalog = app_context.catalog
-    audit = app_context.get_audit()
+    audit = app_context.audit
     sales = app_context.sales
 
-    # --- Behandl alle fakturaer → regenerer hel fil ---
-    out_path = app_context.sales_beancount()
-
-    transactions: list[BeancountTransaction] = []
-    new_count = 0
-
     for invoice in sales.invoices:
+        if not app_context.is_new(invoice.transaction_id()):
+            continue
+        
+        invoice.invoice_number = app_context.get_next_invoice_number()
+        flag = "!"
+
         # BR-S01: valider kunde
         customer = customers.by_id(invoice.customer_id)
         if customer is None:
+            app_context.add_error(TransactionType.SALE, f"ukendt customer_id={invoice.customer_id!r}")
             raise SalesValidationError(
                 f"ukendt customer_id={invoice.customer_id!r}"
             )
@@ -69,49 +72,33 @@ def generate_sales(app_context: AppContext) -> int:
         # BR-S02: valider ydelser
         for line in invoice.lines:
             if catalog.by_id(line.service_id) is None:
-                raise SalesValidationError(
-                    f"Faktura {invoice.invoice_number}: "
-                    f"ukendt service_id={line.service_id!r}"
-                )
+                app_context.add_error(TransactionType.SALE, f"Faktura {invoice.invoice_number}: ukendt service_id={line.service_id!r}")
 
         # BR-S03–S05: beregn totaler
         total_excl, vat, total_incl = _calculate_totals(invoice, catalog)
 
-        # Bestem flag fra audit-status
-        invoice.invoice_number = app_context.get_next_invoice_number()
-        existing = audit.by_transaction_id(invoice.transaction_id())
-        flag = "*" if (existing and existing.status == "godkendt") else "!"
-
         # BR-S06: generer faktura-PDF og opret audit-entry kun for NYE fakturaer
-        if existing is None:
-            pdf_path = app_context.get_invoice_path(invoice)
-            generate_invoice_pdf(invoice, customer, catalog, settings, pdf_path)
-            relative_pdf = pdf_path.relative_to(app_context.root_path).as_posix()
-            entry = AuditEntry(
-                transaction_id=invoice.transaction_id(),
-                status="draft",
-                type="sales",
-                account=customer.beancount_account,
-                date=invoice.invoice_date,
-                total_amount=total_incl,
-                vat_amount=vat,
-                vat_free_amount=Decimal("0"),
-                receipt=relative_pdf,
-            )
-            audit.add(entry)
-            new_count += 1
+        pdf_path = app_context.get_invoice_path(invoice)
+        generate_invoice_pdf(invoice, customer, catalog, settings, pdf_path)
+        relative_pdf = pdf_path.relative_to(app_context.root_path).as_posix()
+        entry = AuditEntry(
+            transaction_id=invoice.transaction_id(),
+            status="draft",
+            type="sales",
+            account=customer.beancount_account,
+            date=invoice.invoice_date,
+            total_amount=total_incl,
+            vat_amount=vat,
+            vat_free_amount=Decimal("0"),
+            receipt=relative_pdf,
+        )
+        audit.add(entry)
 
         # Byg Beancount-postering
         txn = _build_transaction(invoice, customer, catalog, total_excl, vat, flag=flag)
-        transactions.append(txn)
+        app_context.add_transaction(TransactionType.SALE, txn)
 
-    if not transactions:
-        return 0
-
-    write_transactions(out_path, transactions, title=f"Salg {app_context.current_state.current_year}")
-    audit.to_yaml(app_context.audit_yaml)
-    app_context.commit_all("sales updated")
-    return new_count
+    return
 
 
 # ---------------------------------------------------------------------------

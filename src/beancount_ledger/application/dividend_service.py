@@ -18,6 +18,7 @@ from __future__ import annotations
 from decimal import Decimal
 from pathlib import Path
 
+from beancount_ledger.transaction import TransactionType
 from beancount_ledger.application.app_context import AppContext
 from beancount_ledger.domain.audit import AuditEntry, AuditFile
 from beancount_ledger.domain.beancount_types import (
@@ -32,41 +33,29 @@ from beancount_ledger.infrastructure.beancount_writer import (
 
 
 def generate_dividends(app_context: AppContext) -> int:
-    audit = app_context.get_audit()
+    audit = app_context.audit
     dividends = app_context.dividends
 
-    out_path = app_context.dividends_beancount()
-    transactions: list[BeancountTransaction] = []
-    new_count = 0
-
     for payment in dividends.payments:
-        existing = audit.by_transaction_id(payment.transaction_id())
-        flag = "*" if (existing and existing.status == "godkendt") else "!"
-        txn = _build_transaction(payment, flag=flag)
-        transactions.append(txn)
+        if not app_context.is_new(payment.transaction_id()):
+            continue
 
-        if existing is None:
-            entry = AuditEntry(
-                transaction_id=payment.transaction_id(),
-                status="draft",
-                type="dividend",
-                account="Liabilities:DividendPayable",
-                date=payment.run_date,
-                total_amount=payment.gross_amount,
-                vat_amount=Decimal("0"),
-                vat_free_amount=Decimal("0"),
-                receipt="",
-            )
-            audit.add(entry)
-            new_count += 1
+        txn = _build_transaction(payment, flag="!")
+        app_context.add_transaction(TransactionType.DIVIDEND, txn)
 
-    if not transactions:
-        return 0
-
-    write_transactions(out_path, transactions, title=f"Udbytte {app_context.current_state.current_year}")
-    audit.to_yaml(app_context.audit_yaml)
-    # git_io.commit_all(app_context.root_path, "salary updated")
-    return new_count
+        entry = AuditEntry(
+            transaction_id=payment.transaction_id(),
+            status="draft",
+            type="dividend",
+            account="Liabilities:DividendPayable",
+            date=payment.run_date,
+            total_amount=payment.gross_amount,
+            vat_amount=Decimal("0"),
+            vat_free_amount=Decimal("0"),
+            receipt="",
+        )
+        audit.add(entry)
+    return
 
 
 # ---------------------------------------------------------------------------
